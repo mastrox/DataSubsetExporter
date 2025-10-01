@@ -1,0 +1,30 @@
+name: Publish NuGet packages
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Build & Pack
+        run: |
+          dotnet build --configuration Release
+          dotnet pack src/DataSubset.Core/DataSubset.Core.csproj -c Release --no-build -o ./artifacts
+          dotnet pack src/DataSubset.PostgreSql/DataSubset.PostgreSql.csproj -c Release --no-build -o ./artifacts
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          for nupkg in ./artifacts/*.nupkg; do
+            dotnet nuget push "$nupkg" -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json --skip-duplicate
+          done
