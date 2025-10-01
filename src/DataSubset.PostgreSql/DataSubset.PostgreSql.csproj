@@ -7,6 +7,8 @@
 		<PackageId>DataSubset.PostgreSql</PackageId>
 		<Description>PostgreSQL-specific dependency discovery utilities for DataSubset. Implements Npgsql-backed schema inspection and graph traversal to extract relationship-aware, minimal subsets of data for testing, migration, and export scenarios.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -19,6 +21,10 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DataSubset.Core\DataSubset.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="" />
 	</ItemGroup>
 
 </Project>
