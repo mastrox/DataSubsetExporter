@@ -4,7 +4,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<PackageId>DataSubset.Core</PackageId>
+		<PackageId>DataSubset.PostgreSql</PackageId>
 		<Description>PostgreSQL-specific dependency discovery utilities for DataSubset. Implements Npgsql-backed schema inspection and graph traversal to extract relationship-aware, minimal subsets of data for testing, migration, and export scenarios.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
