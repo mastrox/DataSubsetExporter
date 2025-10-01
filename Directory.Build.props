@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Claudio Lepri</Authors>
+    <RepositoryUrl>https://github.com/mastrox/DataSubsetExporter</RepositoryUrl>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <!-- Optionally centralize package version here or override in csproj/CI -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PackageId>DataSubset.Core</PackageId>
+		<Description>Core library providing graph utilities, dependency resolution, and data-subsetting primitives used by DataSubset services and tools. Includes traversal algorithms, configuration abstractions, and helpers for building and analyzing data subset graphs.</Description>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Configurations\ModelConfigService.cs" />
+	</ItemGroup>
+
+</Project>
