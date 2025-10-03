@@ -119,7 +119,7 @@ namespace DependencyTreeApp
                 var scc = graph.GetStronglyConnectedComponents();
                 var cycles = scc.Where(component => component.Count > 1).ToList();
 
-                if (cycles.Any())
+                if (cycles.Count > 0)
                 {
                     Console.WriteLine("Detected cycles:");
                     foreach (var cycle in cycles)
@@ -228,11 +228,11 @@ namespace DependencyTreeApp
                                 if (logger?.IsEnabled(LogLevel.Debug) == true)
                                 {
                                     var columnBindings = implicitRelation.ColumnBindings?.ToList() ?? new List<ColumnBinding>();
-                                    if (columnBindings.Any())
+                                    if (columnBindings.Count > 0)
                                     {
                                         foreach (var binding in columnBindings)
                                         {
-                                            logger.LogDebug("  IMPLICIT RELATION: {0}.{1} -> {2}.{3}", node.FullName,binding.SourceColumn, targetNode.FullName, binding.TargetColumn );
+                                            logger.LogDebug("  IMPLICIT RELATION: {0}.{1} -> {2}.{3}", node.FullName, binding.SourceColumn, targetNode.FullName, binding.TargetColumn);
                                         }
                                     }
                                     else
@@ -287,7 +287,7 @@ namespace DependencyTreeApp
             }
 
             var tablesWithoutPK = graph.GetNodes().Where(n => !n.PrimaryKeyColumns.Any()).ToList();
-            if (tablesWithoutPK.Any())
+            if (tablesWithoutPK.Count > 0)
             {
                 Console.WriteLine($"Tables without primary key: {tablesWithoutPK.Count}");
                 foreach (var table in tablesWithoutPK.Take(5))

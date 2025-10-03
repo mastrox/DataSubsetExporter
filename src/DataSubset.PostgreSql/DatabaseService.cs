@@ -43,7 +43,7 @@ namespace DataSubset.PostgreSql
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
                         string columnName = reader.GetName(i);
-                        object value = null;
+                        object? value = null;
 
                         if (!reader.IsDBNull(i))
                         {
@@ -93,7 +93,7 @@ namespace DataSubset.PostgreSql
                             }
                         }
 
-                        result[columnName] = value;
+                        result[columnName] = value!;
                     }
                 }
             }
@@ -284,7 +284,7 @@ namespace DataSubset.PostgreSql
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
                         string columnName = reader.GetName(i);
-                        object value = null;
+                        object? value = null;
 
                         if (!reader.IsDBNull(i))
                         {
@@ -334,7 +334,7 @@ namespace DataSubset.PostgreSql
                             }
                         }
 
-                        row[columnName] = value;
+                        row[columnName] = value!;
                     }
                     result.Add(row);
                 }

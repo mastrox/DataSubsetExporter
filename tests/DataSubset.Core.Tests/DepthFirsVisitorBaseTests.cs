@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DataSubset.Core.DependencyGraph;
-using DataSubset.Core.DependencyGraph;
 using Xunit;
 
 namespace DataSubset.Core.Tests

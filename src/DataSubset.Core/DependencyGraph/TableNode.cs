@@ -55,7 +55,7 @@
         /// </summary>
         /// <param name="obj">The object to compare with the current object.</param>
         /// <returns><c>true</c> if the specified object is a <see cref="TableNode"/> with the same <see cref="FullName"/> (case-insensitive); otherwise, <c>false</c>.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is TableNode other &&
                    StringComparer.OrdinalIgnoreCase.Equals(FullName, other.FullName);

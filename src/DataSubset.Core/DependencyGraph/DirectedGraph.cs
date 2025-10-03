@@ -16,6 +16,7 @@ namespace DataSubset.Core.DependencyGraph
     /// - Edges: Edge equality is determined by <see cref="GraphEdge{TNode, TEdgeData}"/> implementation.
     /// </remarks>
     public class DirectedGraph<TNode, TEdgeData>
+    where TNode : notnull
     {
         private readonly Dictionary<TNode, HashSet<GraphEdge<TNode, TEdgeData>>> _adjacencyList;
         private readonly Dictionary<TNode, HashSet<GraphEdge<TNode, TEdgeData>>> _reverseAdjacencyList;
@@ -58,7 +59,7 @@ namespace DataSubset.Core.DependencyGraph
         /// - If either node does not exist, it will be created.
         /// - Time complexity: O(1) average for insertion.
         /// </remarks>
-        public void AddEdge(TNode source, TNode target, TEdgeData edgeData = default)
+        public void AddEdge(TNode source, TNode target, TEdgeData? edgeData = default)
         {
             AddNode(source);
             AddNode(target);
@@ -105,14 +106,20 @@ namespace DataSubset.Core.DependencyGraph
             var outgoingEdges = _adjacencyList[node].ToList();
             foreach (var edge in outgoingEdges)
             {
-                _reverseAdjacencyList[edge.Target].Remove(edge);
+                if (edge.Target != null && _reverseAdjacencyList.ContainsKey(edge.Target))
+                {
+                    _reverseAdjacencyList[edge.Target].Remove(edge);
+                }
             }
 
             // Remove all incoming edges
             var incomingEdges = _reverseAdjacencyList[node].ToList();
             foreach (var edge in incomingEdges)
             {
-                _adjacencyList[edge.Source].Remove(edge);
+                if (edge.Source != null && _adjacencyList.ContainsKey(edge.Source))
+                {
+                    _adjacencyList[edge.Source].Remove(edge);
+                }
             }
 
             _adjacencyList.Remove(node);
@@ -175,7 +182,7 @@ namespace DataSubset.Core.DependencyGraph
         /// <returns>An enumeration of nodes that have edges pointing to <paramref name="node"/>.</returns>
         public IEnumerable<TNode> GetPredecessors(TNode node)
         {
-            return GetIncomingEdges(node).Select(e => e.Source);
+            return GetIncomingEdges(node).Where(a=>a.Source != null).Select(e => e.Source)!;
         }
 
         /// <summary>

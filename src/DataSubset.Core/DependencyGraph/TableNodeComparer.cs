@@ -20,7 +20,7 @@ namespace DataSubset.Core.DependencyGraph
         /// <returns>
         /// true if both are null, or if their <see cref="TableNode.FullName"/> values are equal using an ordinal, case-insensitive comparison; otherwise, false.
         /// </returns>
-        public bool Equals(TableNode x, TableNode y)
+        public bool Equals(TableNode? x, TableNode? y)
         {
             if (x == null && y == null) return true;
             if (x == null || y == null) return false;

@@ -13,7 +13,7 @@ namespace DataSubset.PostgreSql
         public string Sql { get; set; }
         public List<NpgsqlParameter> Parameters { get; set; } = new();
 
-        public ParameterizedSql(string sql, List<NpgsqlParameter> parameters = null)
+        public ParameterizedSql(string sql, List<NpgsqlParameter>? parameters = null)
         {
             Sql = sql;
             Parameters = parameters ?? new List<NpgsqlParameter>();
@@ -46,9 +46,9 @@ namespace DataSubset.PostgreSql
     /// </summary>
     public class BatchInsertResult
     {
-        public string TableKey { get; set; }
-        public string Schema { get; set; }
-        public string TableName { get; set; }
+        public required string TableKey { get; set; }
+        public required string Schema { get; set; }
+        public required string TableName { get; set; }
         public List<string> InsertStatements { get; set; } = new();
         public int RowCount { get; set; }
 
@@ -133,7 +133,7 @@ namespace DataSubset.PostgreSql
         /// <returns>A list of batch INSERT statements</returns>
         public static List<string> GenerateBatchInsertStatements(
             string schema, string tableName, List<ColumnInfo> columns,
-            IEnumerable<Dictionary<string, object>> rowsData, BatchInsertConfig config = null)
+            IEnumerable<Dictionary<string, object>> rowsData, BatchInsertConfig? config = null)
         {
             config ??= new BatchInsertConfig();
             var statements = new List<string>();
@@ -179,7 +179,7 @@ namespace DataSubset.PostgreSql
                     sb.Append(" ON CONFLICT DO NOTHING");
                 }
 
-                sb.Append(";");
+                sb.Append(';');
                 statements.Add(sb.ToString());
             }
 
@@ -197,7 +197,7 @@ namespace DataSubset.PostgreSql
         /// <returns>A list of parameterized batch INSERT statements</returns>
         public static List<ParameterizedSql> GenerateBatchParameterizedInsertStatements(
             string schema, string tableName, List<ColumnInfo> columns,
-            IEnumerable<Dictionary<string, object>> rowsData, BatchInsertConfig config = null)
+            IEnumerable<Dictionary<string, object>> rowsData, BatchInsertConfig? config = null)
         {
             config ??= new BatchInsertConfig();
             var statements = new List<ParameterizedSql>();
@@ -248,7 +248,7 @@ namespace DataSubset.PostgreSql
                     sb.Append(" ON CONFLICT DO NOTHING");
                 }
 
-                sb.Append(";");
+                sb.Append(';');
                 statements.Add(new ParameterizedSql(sb.ToString(), parameters));
             }
 
@@ -364,7 +364,7 @@ namespace DataSubset.PostgreSql
         /// <summary>
         /// Creates an NpgsqlParameter with appropriate type mapping.
         /// </summary>
-        private static NpgsqlParameter CreateNpgsqlParameter(string parameterName, object value, ColumnInfo column)
+        private static NpgsqlParameter CreateNpgsqlParameter(string parameterName, object? value, ColumnInfo column)
         {
             var parameter = new NpgsqlParameter(parameterName, value ?? DBNull.Value);
 
@@ -420,7 +420,7 @@ namespace DataSubset.PostgreSql
         /// </summary>
         /// <param name="value">The value to format</param>
         /// <returns>A SQL-formatted string representation of the value</returns>
-        public static string FormatSqlValue(object value)
+        public static string FormatSqlValue(object? value)
         {
             if (value == null)
                 return "NULL";
@@ -443,7 +443,7 @@ namespace DataSubset.PostgreSql
             if (value is string str)
             {
                 // Check if this looks like a PostgreSQL array string representation
-                if (str.StartsWith("{") && str.EndsWith("}"))
+                if (str.StartsWith('{') && str.EndsWith('}'))
                 {
                     // This is likely an array - return it as-is but properly escaped
                     return $"'{str.Replace("'", "''")}'";
@@ -528,13 +528,13 @@ namespace DataSubset.PostgreSql
             }
 
             // Handle JSON types (if using Npgsql's JsonDocument or similar)
-            if (value.ToString().StartsWith("{") || value.ToString().StartsWith("["))
+            if (value != null && (value.ToString()!.StartsWith("{") || value.ToString()!.StartsWith("[")))
             {
-                return $"'{value.ToString().Replace("'", "''")}'::json";
+                return $"'{value!.ToString()!.Replace("'", "''")}'::json";
             }
 
             // Default case - convert to string and escape
-            return $"'{value.ToString().Replace("'", "''")}'";
+            return $"'{value?.ToString()?.Replace("'", "''")}'";
         }
 
         /// <summary>
@@ -572,7 +572,7 @@ namespace DataSubset.PostgreSql
         /// <param name="whereClause">Optional WHERE clause</param>
         /// <returns>A SQL SELECT statement</returns>
         public static string GenerateSelectStatement(string schema, string tableName,
-            IEnumerable<string> columns = null, string whereClause = null)
+            IEnumerable<string>? columns = null, string? whereClause = null)
         {
             var sb = new StringBuilder();
             sb.Append("SELECT ");
@@ -583,7 +583,7 @@ namespace DataSubset.PostgreSql
             }
             else
             {
-                sb.Append("*");
+                sb.Append('*');
             }
 
             sb.Append($" FROM {EscapeIdentifier(schema)}.{EscapeIdentifier(tableName)}");
@@ -645,10 +645,10 @@ namespace DataSubset.PostgreSql
     /// </summary>
     public class InsertStatementTemplate
     {
-        public string SqlTemplate { get; set; }
+        public required string SqlTemplate { get; set; }
         public List<ColumnInfo> Columns { get; set; } = new();
-        public string Schema { get; set; }
-        public string TableName { get; set; }
+        public required string Schema { get; set; }
+        public required string TableName { get; set; }
 
         public string TableKey => $"{Schema}.{TableName}";
     }
