@@ -1,4 +1,4 @@
-using DataSubsetCore.DependencyGraph;
+using DataSubset.Core.DependencyGraph;
 using Xunit;
 
 namespace DataSubset.Core.Tests

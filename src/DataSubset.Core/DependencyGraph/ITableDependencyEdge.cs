@@ -1,6 +1,6 @@
-﻿using DataSubsetCore.Configurations;
+﻿using DataSubset.Core.Configurations;
 
-namespace DataSubsetCore.DependencyGraph
+namespace DataSubset.Core.DependencyGraph
 {
 
     /// <summary>

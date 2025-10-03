@@ -1,6 +1,6 @@
 using System.Linq;
-using DataSubsetCore.Configurations;
-using DataSubsetCore.DependencyGraph;
+using DataSubset.Core.Configurations;
+using DataSubset.Core.DependencyGraph;
 using Xunit;
 
 namespace DataSubset.Core.Tests

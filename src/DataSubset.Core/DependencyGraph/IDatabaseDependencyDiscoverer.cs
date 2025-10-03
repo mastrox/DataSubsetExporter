@@ -1,4 +1,4 @@
-﻿namespace DataSubsetCore.DependencyGraph
+﻿namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Defines operations for discovering database tables and constructing foreign key dependencies,

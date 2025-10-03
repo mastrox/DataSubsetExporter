@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace DataSubsetCore.Configurations
+namespace DataSubset.Core.Configurations
 {
     /// <summary>
     /// Represents model configuration for a specific table, including implicit relations
     /// that are not defined as foreign keys in the database schema.
     /// </summary>
-    public class ModelConfig
+    public class TableConfiguration
     {
         /// <summary>
         /// The database schema name where the table is located.
@@ -41,11 +41,11 @@ namespace DataSubsetCore.Configurations
         /// </summary>
         public int ImplicitRelationCount => ImplicitRelations?.Count ?? 0;
 
-        public ModelConfig()
+        public TableConfiguration()
         {
         }
 
-        public ModelConfig(string schema, string tableName)
+        public TableConfiguration(string schema, string tableName)
         {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
@@ -172,7 +172,7 @@ namespace DataSubsetCore.Configurations
         
         public override bool Equals(object? obj)
         {
-            if (obj is not ModelConfig other)
+            if (obj is not TableConfiguration other)
                 return false;
 
             return string.Equals(FullName, other.FullName, StringComparison.OrdinalIgnoreCase);

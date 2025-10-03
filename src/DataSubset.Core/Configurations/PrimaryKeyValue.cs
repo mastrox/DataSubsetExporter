@@ -1,4 +1,4 @@
-﻿namespace DataSubsetCore.Configurations
+﻿namespace DataSubset.Core.Configurations
 {
     /// <summary>
     /// Represents a pairing of a primary key column name and its corresponding value,

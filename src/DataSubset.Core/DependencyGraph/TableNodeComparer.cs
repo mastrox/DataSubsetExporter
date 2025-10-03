@@ -1,5 +1,5 @@
 // Node representing a table in the dependency graph
-namespace DataSubsetCore.DependencyGraph
+namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Provides a case-insensitive equality comparer for <see cref="TableNode"/> instances based on their fully qualified name.

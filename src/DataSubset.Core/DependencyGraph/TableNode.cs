@@ -1,4 +1,4 @@
-﻿namespace DataSubsetCore.DependencyGraph
+﻿namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Represents a database table within the dependency graph.

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DataSubsetCore.Configurations;
-using DataSubsetCore.DependencyGraph;
+using DataSubset.Core.Configurations;
+using DataSubset.Core.DependencyGraph;
 using DependencyTreeApp;
 using Xunit;
 
@@ -15,7 +15,7 @@ namespace DataSubset.Core.Tests
         public async Task BuildDependencyGraph_AppliesImplicitRelations()
         {
             // Arrange: A, B exist; implicit relation A -> B
-            var modelA = new ModelConfig("s", "A");
+            var modelA = new TableConfiguration("s", "A");
             modelA.ImplicitRelations = new List<ImplicitRelation>
             {
                 new()
@@ -26,17 +26,17 @@ namespace DataSubset.Core.Tests
                     WhereClause = "BId > 0"
                 }
             };
-            var modelConfigs = new List<ModelConfig> { modelA };
+            var modelConfigs = new List<TableConfiguration> { modelA };
             var ignored = new List<TableToIgnore>();
             var fake = new FakeDiscoverer(
                 tables: new[] { ("s","A"), ("s","B") },
                 fks: Array.Empty<FkDef>()
             );
 
-            var builder = new TableDependencyGraphBuilder(modelConfigs, ignored, fake);
+            var builder = new TableDependencyGraphBuilder(fake);
 
             // Act
-            var graph = await builder.BuildDependencyGraphAsync(new[] { "s" }, verbose: false);
+            var graph = await builder.BuildDependencyGraphAsync(new[] { "s" }, modelConfigs, ignored);
 
             // Assert: implicit edge A -> B present with metadata
             var a = builder.FindTable("s", "A")!;
@@ -59,7 +59,7 @@ namespace DataSubset.Core.Tests
         public async Task BuildDependencyGraph_AddsForeignKeys_WithEdgeData()
         {
             // Arrange: A -> B FK with bindings and name
-            var modelConfigs = new List<ModelConfig>();
+            var modelConfigs = new List<TableConfiguration>();
             var ignored = new List<TableToIgnore>();
             var fk = new FkDef(("s","A"), ("s","B"),
                 constraint: "FK_A_B",
@@ -71,10 +71,10 @@ namespace DataSubset.Core.Tests
                 tables: new[] { ("s","A"), ("s","B") },
                 fks: new[] { fk }
             );
-            var builder = new TableDependencyGraphBuilder(modelConfigs, ignored, fake);
+            var builder = new TableDependencyGraphBuilder(fake);
 
             // Act
-            var graph = await builder.BuildDependencyGraphAsync(new[] { "s" });
+            var graph = await builder.BuildDependencyGraphAsync(new[] { "s" },modelConfigs, ignored);
 
             // Assert
             var a = builder.FindTable("s","A")!;
@@ -95,8 +95,8 @@ namespace DataSubset.Core.Tests
                 tables: new[] { ("s","A"), ("s","B") },
                 fks: new[] { new FkDef(("s","A"), ("s","B")) }
             );
-            var builder = new TableDependencyGraphBuilder(new(), new(), fake);
-            await builder.BuildDependencyGraphAsync(new[] { "s" });
+            var builder = new TableDependencyGraphBuilder(fake);
+            await builder.BuildDependencyGraphAsync(new[] { "s" },new(), new());
 
             var order = builder.GetTablesInDependencyOrder();
             var pos = order.Select((n,i)=>(n,i)).ToDictionary(t => t.n.FullName, t => t.i, StringComparer.OrdinalIgnoreCase);
@@ -116,8 +116,8 @@ namespace DataSubset.Core.Tests
                     new FkDef(("s","B"), ("s","A"))
                 }
             );
-            var builder = new TableDependencyGraphBuilder(new(), new(), fake);
-            await builder.BuildDependencyGraphAsync(new[] { "s" });
+            var builder = new TableDependencyGraphBuilder(fake);
+            await builder.BuildDependencyGraphAsync(new[] { "s" },new(),new());
 
             var order = builder.GetTablesInDependencyOrder();
             // Order unspecified, but both must be present
@@ -137,8 +137,8 @@ namespace DataSubset.Core.Tests
                     new FkDef(("s","B"), ("s","C"))
                 }
             );
-            var builder = new TableDependencyGraphBuilder(new(), new(), fake);
-            await builder.BuildDependencyGraphAsync(new[] { "s" });
+            var builder = new TableDependencyGraphBuilder(fake);
+            await builder.BuildDependencyGraphAsync(new[] { "s" },new(),new());
 
             var roots = builder.GetRootTables().Select(n => n.FullName).ToList();
             var leaves = builder.GetLeafTables().Select(n => n.FullName).ToList();
@@ -159,9 +159,9 @@ namespace DataSubset.Core.Tests
                 tables: new[] { ("s","Visible"), ("s","Ignored") },
                 fks: Array.Empty<FkDef>()
             );
-            var builder = new TableDependencyGraphBuilder(new(), ignored, fake);
+            var builder = new TableDependencyGraphBuilder(fake);
 
-            await builder.BuildDependencyGraphAsync(new[] { "s" });
+            await builder.BuildDependencyGraphAsync(new[] { "s" }, new(), ignored);
 
             Assert.NotNull(builder.FindTable("s","Visible"));
             Assert.Null(builder.FindTable("s","Ignored"));
@@ -177,9 +177,9 @@ namespace DataSubset.Core.Tests
                 tables: new[] { ("s","A") },
                 fks: Array.Empty<FkDef>()
             );
-            var builder = new TableDependencyGraphBuilder(new(), new(), fake);
+            var builder = new TableDependencyGraphBuilder(fake);
 
-            await builder.BuildDependencyGraphAsync(new[] { "s", "x" });
+            await builder.BuildDependencyGraphAsync(new[] { "s", "x" },new(), new());
 
             Assert.Equal(new[] { "s", "x" }, fake.SchemasForDiscover?.ToArray());
             Assert.Equal(new[] { "s", "x" }, fake.SchemasForFks?.ToArray());
@@ -207,15 +207,17 @@ namespace DataSubset.Core.Tests
                 _fks = fks.ToList();
             }
 
-            public Task DiscoverTablesAsync(DatabaseGraph graph, string[] schemas, HashSet<string> ignoredTables)
+            public Task DiscoverTablesAsync(DatabaseGraph graph, string[] schemas, HashSet<string>? ignoredTables)
             {
                 SchemasForDiscover = schemas.ToArray();
-                LastIgnoredTables = new HashSet<string>(ignoredTables, StringComparer.OrdinalIgnoreCase);
+                if(ignoredTables != null)
+                    LastIgnoredTables = new HashSet<string>(ignoredTables, StringComparer.OrdinalIgnoreCase);
 
                 foreach (var (schema, table) in _tables)
                 {
                     var full = $"{schema}.{table}";
-                    if (ignoredTables.Contains(full)) continue;
+                    if (ignoredTables?.Contains(full) == true) 
+                        continue;
                     graph.GetOrCreateNode(schema, table);
                 }
                 return Task.CompletedTask;
@@ -224,13 +226,15 @@ namespace DataSubset.Core.Tests
             public Task BuildForeignKeyRelationshipsAsync(DatabaseGraph graph, string[] schemas, HashSet<string> ignoredTables)
             {
                 SchemasForFks = schemas.ToArray();
-                LastIgnoredTables = new HashSet<string>(ignoredTables, StringComparer.OrdinalIgnoreCase);
+                if (ignoredTables != null)
+                    LastIgnoredTables = new HashSet<string>(ignoredTables, StringComparer.OrdinalIgnoreCase);
 
                 foreach (var fk in _fks)
                 {
                     var childFull = $"{fk.Child.schema}.{fk.Child.table}";
                     var parentFull = $"{fk.Parent.schema}.{fk.Parent.table}";
-                    if (ignoredTables.Contains(childFull) || ignoredTables.Contains(parentFull)) continue;
+                    if (ignoredTables?.Contains(childFull) == true || ignoredTables?.Contains(parentFull)== true) 
+                        continue;
 
                     // ensure nodes exist (defensive: discovery should have added them)
                     var child = graph.FindTable(fk.Child.schema, fk.Child.table) ?? graph.GetOrCreateNode(fk.Child.schema, fk.Child.table);

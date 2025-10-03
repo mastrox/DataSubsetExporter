@@ -1,4 +1,4 @@
-namespace DataSubsetCore.DependencyGraph
+namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Represents a directed edge between two nodes in a dependency graph.

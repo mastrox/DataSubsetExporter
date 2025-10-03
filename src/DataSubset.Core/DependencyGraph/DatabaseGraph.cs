@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
  
-namespace DataSubsetCore.DependencyGraph
+namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Represents a directed graph of database tables and their dependencies.

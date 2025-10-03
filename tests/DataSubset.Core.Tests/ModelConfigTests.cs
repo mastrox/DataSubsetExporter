@@ -1,5 +1,5 @@
 using System.Linq;
-using DataSubsetCore.Configurations;
+using DataSubset.Core.Configurations;
 using Xunit;
 
 namespace DataSubset.Core.Tests
@@ -9,7 +9,7 @@ namespace DataSubset.Core.Tests
         [Fact]
         public void Validate_ReportsMissingTableName()
         {
-            var mc = new ModelConfig(); // Schema defaults to "public", TableName is empty
+            var mc = new TableConfiguration(); // Schema defaults to "public", TableName is empty
             var errors = mc.Validate();
             Assert.Contains(errors, e => e.Contains("Table name is required"));
         }
@@ -17,7 +17,7 @@ namespace DataSubset.Core.Tests
         [Fact]
         public void AddImplicitRelation_AvoidsDuplicates_AndContainsRelationWorks()
         {
-            var mc = new ModelConfig("s", "t");
+            var mc = new TableConfiguration("s", "t");
 
             var rel = new ImplicitRelation
             {
@@ -40,7 +40,7 @@ namespace DataSubset.Core.Tests
         [Fact]
         public void GetRelationsBySourceColumn_FiltersBySource()
         {
-            var mc = new ModelConfig("s", "t");
+            var mc = new TableConfiguration("s", "t");
             mc.AddImplicitRelation(new ImplicitRelation
             {
                 TargetSchema = "s2",
@@ -68,8 +68,8 @@ namespace DataSubset.Core.Tests
         [Fact]
         public void Equals_AndHashCode_AreCaseInsensitiveOnFullName()
         {
-            var a = new ModelConfig("dbo", "Users");
-            var b = new ModelConfig("DBO", "users");
+            var a = new TableConfiguration("dbo", "Users");
+            var b = new TableConfiguration("DBO", "users");
 
             Assert.True(a.Equals(b));
             Assert.Equal(a.GetHashCode(), b.GetHashCode());

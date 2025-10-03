@@ -1,4 +1,4 @@
-using DataSubsetCore.Configurations;
+using DataSubset.Core.Configurations;
 using Xunit;
 
 namespace DataSubset.Core.Tests

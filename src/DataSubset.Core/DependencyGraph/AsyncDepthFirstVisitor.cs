@@ -1,5 +1,5 @@
-using DataSubsetCore.Configurations;
-using DataSubsetCore.DependencyGraph;
+using DataSubset.Core.Configurations;
+using DataSubset.Core.DependencyGraph;
 using DependencyTreeApp;
 using System;
 using System.Collections.Generic;

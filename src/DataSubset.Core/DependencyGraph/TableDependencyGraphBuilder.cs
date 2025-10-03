@@ -1,6 +1,7 @@
 // Node representing a table in the dependency graph
-using DataSubsetCore.Configurations;
-using DataSubsetCore.DependencyGraph;
+using DataSubset.Core.Configurations;
+using DataSubset.Core.DependencyGraph;
+using Microsoft.Extensions.Logging;
 using System.Data;
 
 namespace DependencyTreeApp
@@ -14,7 +15,7 @@ namespace DependencyTreeApp
     /// This builder:
     /// - Discovers tables and primary keys via <see cref="IDatabaseDependencyDiscoverer"/>.
     /// - Adds foreign key relationships as directed edges (source depends on target).
-    /// - Applies optional implicit relations from <see cref="ModelConfig"/> definitions.
+    /// - Applies optional implicit relations from <see cref="TableConfiguration"/> definitions.
     /// The underlying graph is a <see cref="DatabaseGraph"/> whose edges carry <see cref="ITableDependencyEdge"/> metadata.
     /// </remarks>
     public class TableDependencyGraphBuilder
@@ -25,34 +26,21 @@ namespace DependencyTreeApp
         private readonly DatabaseGraph graph;
 
         /// <summary>
-        /// Set of fully-qualified table names to ignore during discovery and relationship building.
-        /// </summary>
-        private readonly HashSet<string> ignoredTables;
-
-        /// <summary>
         /// Service responsible for discovering tables and database-defined relationships.
         /// </summary>
         private readonly IDatabaseDependencyDiscoverer dbDependencyDiscoverer;
-
-        /// <summary>
-        /// Fast lookup of <see cref="ModelConfig"/> by fully-qualified table name (schema.table).
-        /// </summary>
-        private readonly Dictionary<string, ModelConfig> modelConfigsByFullName;
+        private readonly ILogger? logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableDependencyGraphBuilder"/> class.
         /// </summary>
-        /// <param name="modelConfigs">Model configurations to apply (used for implicit relations).</param>
-        /// <param name="tablesToIgnore">Tables to exclude from graph discovery and relationship building.</param>
         /// <param name="dbDependencyDiscoverer">The discoverer used to populate tables and foreign key edges.</param>
-        public TableDependencyGraphBuilder(List<ModelConfig> modelConfigs, List<TableToIgnore> tablesToIgnore, IDatabaseDependencyDiscoverer dbDependencyDiscoverer)
+        /// <param name="logger">Optional logger for diagnostic messages.</param>
+        public TableDependencyGraphBuilder(IDatabaseDependencyDiscoverer dbDependencyDiscoverer, ILogger? logger = null)
         {
-            graph = new DatabaseGraph(new TableNodeComparer());
-            ignoredTables = new HashSet<string>(
-                tablesToIgnore?.Select(t => t.FullName) ?? new List<string>(),
-                StringComparer.OrdinalIgnoreCase);
             this.dbDependencyDiscoverer = dbDependencyDiscoverer;
-            modelConfigsByFullName = modelConfigs.ToDictionary(a => a.FullName);
+            this.logger = logger;
+            graph = new DatabaseGraph(new TableNodeComparer());
         }
 
         /// <summary>
@@ -64,7 +52,6 @@ namespace DependencyTreeApp
         /// Builds the dependency graph for the specified schemas.
         /// </summary>
         /// <param name="schemas">Schemas to include (e.g., "dbo").</param>
-        /// <param name="verbose">If true, writes progress details to the console.</param>
         /// <returns>The populated <see cref="DatabaseGraph"/>.</returns>
         /// <remarks>
         /// Steps performed:
@@ -72,13 +59,30 @@ namespace DependencyTreeApp
         /// 2) Build foreign key relationships.
         /// 3) Apply implicit relations from model configuration.
         /// </remarks>
-        public async Task<DatabaseGraph> BuildDependencyGraphAsync(string[] schemas, bool verbose = false)
+        public async Task<DatabaseGraph> BuildDependencyGraphAsync(string[] schemas)
         {
+            return await BuildDependencyGraphAsync(schemas, null, null);
+        }
 
-            if (verbose)
-            {
-                Console.WriteLine($"Building dependency graph for schema: {string.Join(", ", schemas)}");
-            }
+        /// <summary>
+        /// Builds the dependency graph for the specified schemas, applying ignore rules and implicit relations.
+        /// </summary>
+        /// <param name="schemas">Schemas to include (e.g., "dbo").</param>
+        /// <param name="tablesConfigurations">Optional table configurations used to add implicit relation edges between existing tables.</param>
+        /// <param name="tablesToIgnore">Optional list of tables to exclude from discovery, FK building, and implicit relation processing.</param>
+        /// <returns>The populated <see cref="DatabaseGraph"/>.</returns>
+        /// <remarks>
+        /// Steps performed:
+        /// 1) Discover tables and their primary keys (respecting <paramref name="tablesToIgnore"/>).
+        /// 2) Build foreign key relationships (respecting <paramref name="tablesToIgnore"/>).
+        /// 3) Apply implicit relations from model configuration (only between nodes already present; missing targets are skipped).
+        /// </remarks>
+        public async Task<DatabaseGraph> BuildDependencyGraphAsync(string[] schemas, List<TableConfiguration>? tablesConfigurations, List<TableToIgnore>? tablesToIgnore)
+        {
+            var ignoredTables = new HashSet<string>(tablesToIgnore?.Select(t => t.FullName) ?? new List<string>(),
+                StringComparer.OrdinalIgnoreCase);
+
+            logger?.LogDebug("Building dependency graph for schemas: {Schemas}", string.Join(", ", schemas));
 
             // Step 1: Discover all tables and their primary keys
             await dbDependencyDiscoverer.DiscoverTablesAsync(graph, schemas, ignoredTables);
@@ -86,13 +90,10 @@ namespace DependencyTreeApp
             // Step 2: Build foreign key relationships
             await dbDependencyDiscoverer.BuildForeignKeyRelationshipsAsync(graph, schemas, ignoredTables);
 
-            //Step 3: Apply model configurations (if any)
-            BuildImplicitRelationsRelationshipsAsync(verbose);
+            // Step 3: Apply model configurations (if any)
+            BuildImplicitRelationsRelationshipsAsync(tablesConfigurations, tablesToIgnore);
 
-            if (verbose)
-            {
-                Console.WriteLine($"Dependency graph built with {graph.GetNodes().Count()} tables");
-            }
+            logger?.LogDebug("Dependency graph built with {TableCount} tables", graph.GetNodes().Count());
 
             return graph;
         }
@@ -189,17 +190,19 @@ namespace DependencyTreeApp
         }
 
         /// <summary>
-        /// Applies implicit relation edges defined in <see cref="ModelConfig"/> to the graph.
+        /// Adds implicit relation edges defined in <see cref="TableConfiguration"/> entries for tables already present in the graph.
         /// </summary>
-        /// <param name="verbose">If true, writes details of implicit edges added.</param>
-        /// <remarks>
-        /// For each configured implicit relation where both source and target tables exist in the graph,
-        /// an edge is added from the source table to the target table to indicate a dependency.
-        /// </remarks>
-        private void BuildImplicitRelationsRelationshipsAsync(bool verbose)
+        /// <param name="tableImpicitRelations">The set of table configurations.</param>
+        /// <param name="tablesToIgnore">Optional list of tables to ignore when considering implicit relations.</param>
+        private void BuildImplicitRelationsRelationshipsAsync(IEnumerable<TableConfiguration>? tableImpicitRelations, List<TableToIgnore>? tablesToIgnore)
         {
+            var ignoredTables = new HashSet<string>(
+                tablesToIgnore?.Select(t => t.FullName) ?? new List<string>(),
+                StringComparer.OrdinalIgnoreCase);
 
-            //traverse all graph nodes
+            var modelConfigsByFullName = tableImpicitRelations?.ToDictionary(a => a.FullName) ?? new Dictionary<string, TableConfiguration>();
+
+            // traverse all graph nodes
             graph.GetNodes().ToList().ForEach(node =>
             {
                 var fullName = node.FullName;
@@ -215,7 +218,6 @@ namespace DependencyTreeApp
                             {
                                 var targetNode = graph.NodesByName[targetFullName];
                                 // Add edge to graph (node depends on targetNode)
-
                                 var edgeData = new ImplicitRelTableDependencyEdge(
                                     targetNode.Schema,
                                     targetNode.Name,
@@ -223,29 +225,29 @@ namespace DependencyTreeApp
                                     implicitRelation.WhereClause);
 
                                 graph.AddEdge(node, targetNode, edgeData);
-                                if (verbose)
+                                if (logger?.IsEnabled(LogLevel.Debug) == true)
                                 {
                                     var columnBindings = implicitRelation.ColumnBindings?.ToList() ?? new List<ColumnBinding>();
                                     if (columnBindings.Any())
                                     {
                                         foreach (var binding in columnBindings)
                                         {
-                                            Console.WriteLine($"  IMPLICIT RELATION: {node.FullName}.{binding.SourceColumn} -> {targetNode.FullName}.{binding.TargetColumn}");
+                                            logger.LogDebug("  IMPLICIT RELATION: {0}.{1} -> {2}.{3}", node.FullName,binding.SourceColumn, targetNode.FullName, binding.TargetColumn );
                                         }
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"  IMPLICIT RELATION: {node.FullName} -> {targetNode.FullName}");
+                                        logger.LogDebug("  IMPLICIT RELATION: {0} -> {1}", node.FullName, targetNode.FullName);
                                     }
                                 }
                             }
-                            else
-                            {
-                                if (verbose)
-                                {
-                                    Console.WriteLine($"  Warning: Implicit relation target table {targetFullName} not found for {fullName}");
-                                }
-                            }
+                            //else
+                            //{
+                            //    if (verbose)
+                            //    {
+                            //        Console.WriteLine($"  Warning: Implicit relation target table {targetFullName} not found for {fullName}");
+                            //    }
+                            //}
                         }
                     }
                 }

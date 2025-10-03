@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace DataSubsetCore.Configurations
+namespace DataSubset.Core.Configurations
 {
     /// <summary>
     /// Represents the root configuration object for export operations,
@@ -19,7 +19,7 @@ namespace DataSubsetCore.Configurations
         /// List of model configurations that define implicit relations and table behaviors.
         /// </summary>
         [JsonPropertyName("modelConfig")]
-        public List<ModelConfig> ModelConfig { get; set; } = new();
+        public List<TableConfiguration> ModelConfig { get; set; } = new();
 
         /// <summary>
         /// Configuration for tables that should be ignored during processing.
@@ -68,7 +68,7 @@ namespace DataSubsetCore.Configurations
         /// <param name="schema">The schema name</param>
         /// <param name="tableName">The table name</param>
         /// <returns>The model configuration if found; otherwise, null</returns>
-        public ModelConfig? GetModelConfig(string schema, string tableName)
+        public TableConfiguration? GetModelConfig(string schema, string tableName)
         {
             return ModelConfig?.FirstOrDefault(m =>
                 m.Schema.Equals(schema, StringComparison.OrdinalIgnoreCase) &&

@@ -1,5 +1,5 @@
 ﻿// Node representing a table in the dependency graph
-namespace DataSubsetCore.DependencyGraph
+namespace DataSubset.Core.DependencyGraph
 {
     /// <summary>
     /// Provides extension methods for working with <see cref="DatabaseGraph"/> objects.

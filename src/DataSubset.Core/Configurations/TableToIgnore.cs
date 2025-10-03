@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace DataSubsetCore.Configurations
+namespace DataSubset.Core.Configurations
 {
     /// <summary>
     /// Represents a table that should be ignored during processing operations.
