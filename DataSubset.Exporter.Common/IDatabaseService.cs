@@ -1,4 +1,4 @@
-﻿namespace DataSubset.PostgreSql
+﻿namespace DataSubset.Exporter.Common
 {
     public interface IDatabaseService
     {

@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\DataSubset.Exporter.Common\DataSubset.Exporter.Common.csproj" />
 		<ProjectReference Include="..\DataSubset.Core\DataSubset.Core.csproj" />
 	</ItemGroup>
 
