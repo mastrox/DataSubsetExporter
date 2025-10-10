@@ -20,4 +20,8 @@
     <PackageReference Include="Npgsql" Version="8.0.8" Condition="'$(TargetFramework)' == 'net8.0'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
 </Project>

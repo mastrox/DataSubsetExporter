@@ -8,7 +8,7 @@ namespace DataSubset.Exporters.Common
         (string column, object? value)[] ExecuteGetRowsQuery(string queryWithValues, IDbConnection connection);
         Task<Dictionary<string, object>> FetchRowByPrimaryKey(string schema, string tableName, IEnumerable<string> primaryKeyColumns, IDictionary<string, string>? primaryKeyValues);
         Task<List<Dictionary<string, object>>> FetchRowsByWhereClause(string schema, string tableName, string whereClause);
-        Task<IDictionary<(string schema, string table), ColumnInfo>> GetColumnMetadata(string schema, string tableName);
+        Task<List<ColumnInfo>> GetColumnMetadata(string schema, string tableName);
         Task<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData);
         Task<List<string>> GetPrimaryKeyColumns(string schema, string tableName);
         Task<string> GetSelectQuery(TableNode currentNode, ITableDependencyEdgeData? data);
