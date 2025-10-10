@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>DataSubset.Exporter.PostgreSql</PackageId>
+    <Description>PostgreSQL-specific dependency discovery utilities for DataSubset. Implements Npgsql-backed service to extract minimal subsets of data for testing, migration, and export scenarios.</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataSubset.DbDependencyGraph.PostgreSql\DataSubset.DbDependencyGraph.PostgreSql.csproj" />
+    <ProjectReference Include="..\DataSubset.Exporters.Common\DataSubset.Exporters.Common.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="9.0.4" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="Npgsql" Version="8.0.8" Condition="'$(TargetFramework)' == 'net8.0'" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,73 @@
+﻿using DataSubset.DbDependencyGraph.Core.Configurations;
+using DataSubset.DbDependencyGraph.Core.DependencyGraph;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+
+namespace DataSubset.Exporters.Common
+{
+    public abstract class ExporterBase<T>(IDbExporterEngine dbExporterEngine, ILogger? logger = null)
+    {
+
+        public async IAsyncEnumerable<T> GetItemsToExportInInsertOrder(IEnumerable<TableExportConfig> tableExportConfig, DatabaseGraph databaseGraph)
+        {
+            dbExporterEngine.InitExport();
+            foreach (var rootTables in tableExportConfig)
+            {
+                //get node
+                var currentTable = databaseGraph.FindTable(rootTables.Schema, rootTables.TableName);
+                if (currentTable == null)
+                {
+                    logger?.LogWarning("Table {0}.{1} not found in graph", rootTables.Schema, rootTables.TableName);
+                    continue;
+                }
+                var rootEdge = new GraphEdge<TableNode, ITableDependencyEdgeData>(source: null, target: currentTable, data: null);
+                await foreach (var item in GetRelationItemsToExportInInsertOrder(rootEdge, null, databaseGraph, tableExportConfig))
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        private async IAsyncEnumerable<T> GetRelationItemsToExportInInsertOrder(GraphEdge<TableNode, ITableDependencyEdgeData> parentToCurrentEdge, (string column, object? value)[]? parentValue, DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
+        {
+            var currentNode = parentToCurrentEdge.Target;
+            var parentValueConverted = parentValue?.Select(a => (parentToCurrentEdge.Data?.GetTargetColumnFromBindings(a.column) ?? a.column, a.value)).ToArray();
+
+            await foreach (var row in dbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, parentValueConverted))
+            {
+                List<Dictionary<string, object>> dataRows = new List<Dictionary<string, object>>();
+
+                var relations = databaseGraph.GetOutgoingEdges(currentNode);
+
+                //process FK dependencies
+                var fkRelations = relations.Where(a => a.Data is FkTableDependencyEdgeData);
+                foreach (var fkRelation in fkRelations)
+                {
+
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(fkRelation, parentValue, databaseGraph, tableExportConfig))
+                    {
+                        yield return item;
+                    }
+                }
+
+                //process current node value
+                yield return await GenerateCurrentRowExportItem(currentNode, row, tableExportConfig);
+
+                //process implicit relation
+                var implicitRelations = relations.Where(a => a.Data is ImplicitRelTableDependencyEdgeData);
+                foreach (var implicitRelation in implicitRelations)
+                {
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(implicitRelation, parentValue, databaseGraph, tableExportConfig))
+                    {
+                        yield return item;
+                    }
+                }
+            }
+
+        }
+
+        protected abstract Task<T> GenerateCurrentRowExportItem(TableNode currentNode, (string column, object? value)[] row, IEnumerable<TableExportConfig> tableExportConfig);
+
+
+    }
+}

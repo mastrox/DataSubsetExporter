@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36401.2
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.PostgreSql", "src\DataSubset.PostgreSql\DataSubset.PostgreSql.csproj", "{0B3B2921-6E26-4689-BCA2-5A4DFE8B3187}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.DbDependencyGraph.PostgreSql", "src\DataSubset.DbDependencyGraph.PostgreSql\DataSubset.DbDependencyGraph.PostgreSql.csproj", "{0B3B2921-6E26-4689-BCA2-5A4DFE8B3187}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,15 +13,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Core", "src\DataSubset.Core\DataSubset.Core.csproj", "{5DFEED7F-F02B-5C89-1F9E-1A71ABD4BBE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.DbDependencyGraph.Core", "src\DataSubset.DbDependencyGraph.Core\DataSubset.DbDependencyGraph.Core.csproj", "{5DFEED7F-F02B-5C89-1F9E-1A71ABD4BBE7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{08D7F488-DBE3-433C-9C4B-238433AD3CC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Core.Tests", "tests\DataSubset.Core.Tests\DataSubset.Core.Tests.csproj", "{D911D93E-197E-D832-8D09-A930B2CD1AEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.DbDependencyGraph.Core.Tests", "tests\DataSubset.DbDependencyGraph.Core.Tests\DataSubset.DbDependencyGraph.Core.Tests.csproj", "{D911D93E-197E-D832-8D09-A930B2CD1AEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporter.Common", "DataSubset.Exporter.Common\DataSubset.Exporter.Common.csproj", "{D07E5FBC-5642-4373-8C1E-FA4A50B922BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporters.Common", "src\DataSubset.Exporters.Common\DataSubset.Exporters.Common.csproj", "{D07E5FBC-5642-4373-8C1E-FA4A50B922BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporters.PostgreSql", "src\DataSubset.Exporters.PostgreSql\DataSubset.Exporters.PostgreSql.csproj", "{E7327E7F-90BD-4FB3-89E9-E9374017664B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporters.PostgreSql", "tests\DataSubset.Exporters.PostgreSql\DataSubset.Exporters.PostgreSql.csproj", "{62B4B663-C57C-4F92-B439-4FB0DE081554}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +49,14 @@ Global
 		{D07E5FBC-5642-4373-8C1E-FA4A50B922BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D07E5FBC-5642-4373-8C1E-FA4A50B922BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D07E5FBC-5642-4373-8C1E-FA4A50B922BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7327E7F-90BD-4FB3-89E9-E9374017664B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7327E7F-90BD-4FB3-89E9-E9374017664B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7327E7F-90BD-4FB3-89E9-E9374017664B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7327E7F-90BD-4FB3-89E9-E9374017664B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +66,8 @@ Global
 		{5DFEED7F-F02B-5C89-1F9E-1A71ABD4BBE7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{D911D93E-197E-D832-8D09-A930B2CD1AEA} = {08D7F488-DBE3-433C-9C4B-238433AD3CC5}
 		{D07E5FBC-5642-4373-8C1E-FA4A50B922BF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{E7327E7F-90BD-4FB3-89E9-E9374017664B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{62B4B663-C57C-4F92-B439-4FB0DE081554} = {08D7F488-DBE3-433C-9C4B-238433AD3CC5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A18E5ECF-DD19-4774-958B-4D88DE8E9F2B}
