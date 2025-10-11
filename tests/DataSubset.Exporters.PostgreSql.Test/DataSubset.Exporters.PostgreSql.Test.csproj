@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DataSubset.DbDependencyGraph.PostgreSql\DataSubset.DbDependencyGraph.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\src\DataSubset.Exporters.PostgreSql\DataSubset.Exporters.PostgreSql.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -21,9 +21,12 @@ namespace DataSubset.Exporters.Common
             }
 
             //add row data to query
-            return string.Format(query, rowData);
+            return AddValuesToQuery(query, rowData);
             
         }
+
+        protected abstract string AddValuesToQuery(string query, (string column, object? value)[]? values);
+       
 
         public async IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? edgeData, SelectionCondition selectionCondition)
         {
@@ -39,7 +42,7 @@ namespace DataSubset.Exporters.Common
             if (selectionCondition.parentValue != null)
             {
                 //add parent value to query
-                query = string.Format(query, selectionCondition.parentValue);
+                query = AddValuesToQuery(query, selectionCondition.parentValue);
             }
 
             yield return await ExecuteGetRowQuery(query);
