@@ -19,8 +19,10 @@ jobs:
       - name: Build & Pack
         run: |
           dotnet build --configuration Release
-          dotnet pack src/DataSubset.Core/DataSubset.Core.csproj -c Release --no-build -o ./artifacts
-          dotnet pack src/DataSubset.PostgreSql/DataSubset.PostgreSql.csproj -c Release --no-build -o ./artifacts
+          dotnet pack src/DataSubset.DbDependencyGraph.Core/DataSubset.DbDependencyGraph.Core.csproj -c Release --no-build -o ./artifacts
+          dotnet pack src/DataSubset.DbDependencyGraph.PostgreSql/DataSubset.DbDependencyGraph.PostgreSql.csproj -c Release --no-build -o ./artifacts
+          dotnet pack src/DataSubset.Exporters.Common/DataSubset.Exporters.Common.csproj -c Release --no-build -o ./artifacts
+          dotnet pack src/DataSubset.Exporters.PostgreSql/DataSubset.Exporters.PostgreSql.csproj -c Release --no-build -o ./artifacts
       - name: Publish to NuGet
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

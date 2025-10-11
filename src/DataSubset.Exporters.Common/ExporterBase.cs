@@ -21,19 +21,21 @@ namespace DataSubset.Exporters.Common
                     continue;
                 }
                 var rootEdge = new GraphEdge<TableNode, ITableDependencyEdgeData>(source: null, target: currentTable, data: null);
-                await foreach (var item in GetRelationItemsToExportInInsertOrder(rootEdge, null, databaseGraph, tableExportConfig))
+                SelectionCondition? whereValue = new SelectionCondition(null, rootTables.WhereClause);
+                
+                await foreach (var item in GetRelationItemsToExportInInsertOrder(rootEdge, whereValue, databaseGraph, tableExportConfig))
                 {
                     yield return item;
                 }
             }
         }
 
-        private async IAsyncEnumerable<T> GetRelationItemsToExportInInsertOrder(GraphEdge<TableNode, ITableDependencyEdgeData> parentToCurrentEdge, (string column, object? value)[]? parentValue, DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
+        private async IAsyncEnumerable<T> GetRelationItemsToExportInInsertOrder(GraphEdge<TableNode, ITableDependencyEdgeData> parentToCurrentEdge, SelectionCondition selectionCondition, DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
         {
             var currentNode = parentToCurrentEdge.Target;
-            var parentValueConverted = parentValue?.Select(a => (parentToCurrentEdge.Data?.GetTargetColumnFromBindings(a.column) ?? a.column, a.value)).ToArray();
+            
 
-            await foreach (var row in dbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, parentValueConverted))
+            await foreach (var row in dbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, selectionCondition))
             {
                 List<Dictionary<string, object>> dataRows = new List<Dictionary<string, object>>();
 
@@ -44,7 +46,7 @@ namespace DataSubset.Exporters.Common
                 foreach (var fkRelation in fkRelations)
                 {
 
-                    await foreach (var item in GetRelationItemsToExportInInsertOrder(fkRelation, parentValue, databaseGraph, tableExportConfig))
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(fkRelation, selectionCondition, databaseGraph, tableExportConfig))
                     {
                         yield return item;
                     }
@@ -57,7 +59,7 @@ namespace DataSubset.Exporters.Common
                 var implicitRelations = relations.Where(a => a.Data is ImplicitRelTableDependencyEdgeData);
                 foreach (var implicitRelation in implicitRelations)
                 {
-                    await foreach (var item in GetRelationItemsToExportInInsertOrder(implicitRelation, parentValue, databaseGraph, tableExportConfig))
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(implicitRelation, new SelectionCondition(row,  null), databaseGraph, tableExportConfig))
                     {
                         yield return item;
                     }

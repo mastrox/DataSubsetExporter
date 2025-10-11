@@ -20,32 +20,36 @@ namespace DataSubset.Exporters.Common
                 insertQueryByTable.Add(currentNode.FullName, query);
             }
 
+            //add row data to query
             return string.Format(query, rowData);
             
         }
 
-        public async IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? edgeData, (string column, object? value)[]? parentValue)
+        public async IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? edgeData, SelectionCondition selectionCondition)
         {
-
-            if (!selectQueryByTable.TryGetValue(currentNode.FullName, out var query))
+            var parentValueConverted = selectionCondition.parentValue?.Select(a => (edgeData?.GetTargetColumnFromBindings(a.column) ?? a.column, a.value)).ToArray();
+            if (!selectQueryByTable.TryGetValue(currentNode.FullName, out string query))
             {
                 //build query
-                query = await GenerateSelectQuery(currentNode, edgeData);
+                query = await GenerateSelectQuery(currentNode, edgeData, selectionCondition.whereCondition);
                 //store query
                 selectQueryByTable.Add(currentNode.FullName, query);
             }
 
-            var queryWithValues = string.Format(query, parentValue);
-            
-            yield return ExecuteGetRowQuery(queryWithValues);
+            if (selectionCondition.parentValue != null)
+            {
+                //add parent value to query
+                query = string.Format(query, selectionCondition.parentValue);
+            }
+
+            yield return await ExecuteGetRowQuery(query);
 
         }
 
-        protected abstract (string column, object? value)[] ExecuteGetRowQuery(string queryWithValues);
-        protected abstract Task<IDbConnection> OpenConnetionAsync();
-        protected abstract Task<string?> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData);
+        protected abstract Task<(string column, object? value)[]> ExecuteGetRowQuery(string queryWithValues);
+        protected abstract ValueTask<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData);
 
-        protected abstract Task<string?> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData);
+        protected abstract ValueTask<string> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData, string? whereCondition);
 
         public void InitExport()
         {
