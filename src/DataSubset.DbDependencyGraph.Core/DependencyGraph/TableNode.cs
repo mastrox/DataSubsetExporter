@@ -8,6 +8,8 @@
     /// </remarks>
     public class TableNode
     {
+        private List<string> primaryKeyColumns = new();
+
         /// <summary>
         /// Gets the schema name the table belongs to.
         /// </summary>
@@ -27,7 +29,16 @@
         /// Gets or sets the ordered list of primary key column names for this table.
         /// Empty if the table has no primary key or it is not known.
         /// </summary>
-        public List<string> PrimaryKeyColumns { get; set; } = new();
+        public List<string> PrimaryKeyColumns
+        {
+            get => primaryKeyColumns;
+            set
+            {
+                primaryKeyColumns = value;
+                PrimaryKeyColumnsSet = new HashSet<string>(value, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+        public HashSet<string> PrimaryKeyColumnsSet { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableNode"/> class.

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common
 {
-    public class InserStatementExporter(IDbExporterEngine dbExporterEngine, ILogger? logger = null) : ExporterBase<string>(dbExporterEngine, logger)
+    public class InsertStatementExporter(IDbExporterEngine dbExporterEngine, ILogger? logger = null) : ExporterBase<string>(dbExporterEngine, logger)
     {
         protected async override Task<string> GenerateCurrentRowExportItem(TableNode currentNode, (string column, object? value)[] row, IEnumerable<TableExportConfig> tableExportConfig)
         {

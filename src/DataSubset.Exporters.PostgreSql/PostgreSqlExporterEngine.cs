@@ -112,7 +112,7 @@ namespace DataSubset.Exporters.PostgreSql
             for (int i = 0; i < (values?.Length ?? 0); i++)
             {
                 var value = values[i].value;
-                query = query.Replace($"{{{i}}}", FormatSqlValue(value));
+                query = query.Replace($"{{{i}}}", ValueToString(value));
             }
             return query;
         }
@@ -122,7 +122,7 @@ namespace DataSubset.Exporters.PostgreSql
         /// </summary>
         /// <param name="value">The value to format</param>
         /// <returns>A SQL-formatted string representation of the value</returns>
-        public static string FormatSqlValue(object value)
+        public override string ValueToString(object? value)
         {
             if (value == null)
                 return "NULL";
@@ -212,7 +212,7 @@ namespace DataSubset.Exporters.PostgreSql
                     else
                     {
                         // For array elements, we need to handle escaping differently
-                        var elementValue = FormatSqlValue(element);
+                        var elementValue = ValueToString(element);
                         // Remove outer quotes and type casting for array elements
                         if (elementValue.StartsWith("'") && elementValue.Contains("'::"))
                         {

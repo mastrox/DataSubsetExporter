@@ -71,5 +71,7 @@ namespace DataSubset.Exporters.Common
             selectQueryByTable.Clear();
             insertQueryByTable.Clear();
         }
+
+        public abstract string ValueToString(object? value);
     }
 }
