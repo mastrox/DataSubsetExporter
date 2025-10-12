@@ -7,7 +7,7 @@ namespace DataSubset.Exporters.Common
 {
     public abstract class DbExporterEngineBase : IDbExporterEngine
     {
-        Dictionary<string, string> selectQueryByTable = new ();
+        Dictionary<string, string> selectQueryByTable = new();
         Dictionary<string, string> insertQueryByTable = new();
 
         public async Task<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData, IEnumerable<TableExportConfig> tableExportConfig)
@@ -22,37 +22,49 @@ namespace DataSubset.Exporters.Common
 
             //add row data to query
             return AddValuesToQuery(query, rowData);
-            
+
         }
 
         protected abstract string AddValuesToQuery(string query, (string column, object? value)[]? values);
-       
+
 
         public async IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? edgeData, SelectionCondition selectionCondition)
         {
-            var parentValueConverted = selectionCondition.parentValue?.Select(a => (edgeData?.GetTargetColumnFromBindings(a.column) ?? a.column, a.value)).ToArray();
+            List<(string column, object? value)> selectData = new();
+            foreach (var item in selectionCondition?.parentValue ?? Enumerable.Empty<(string column, object? value)>())
+            {
+                var targetColumn = edgeData?.GetTargetColumnFromBindings(item.column);
+                if (targetColumn != null)
+                {
+                    selectData.Add((targetColumn, item.value));
+                }
+            }
+
+
             if (!selectQueryByTable.TryGetValue(currentNode.FullName, out string query))
             {
                 //build query
-                query = await GenerateSelectQuery(currentNode, edgeData, selectionCondition.whereCondition);
+                query = await GenerateSelectQuery(currentNode, edgeData, selectionCondition?.whereCondition, selectionCondition?.PrimaryKeyValue);
                 //store query
                 selectQueryByTable.Add(currentNode.FullName, query);
             }
 
-            if (selectionCondition.parentValue != null)
+            if (selectData.Count > 0)
             {
                 //add parent value to query
-                query = AddValuesToQuery(query, selectionCondition.parentValue);
+                query = AddValuesToQuery(query, selectData.ToArray());
             }
 
-            yield return await ExecuteGetRowQuery(query);
-
+            await foreach(var row in ExecuteGetRowQuery(query))
+            {
+                yield return row;
+            }
         }
 
-        protected abstract Task<(string column, object? value)[]> ExecuteGetRowQuery(string queryWithValues);
+        protected abstract IAsyncEnumerable<(string column, object? value)[]> ExecuteGetRowQuery(string queryWithValues);
         protected abstract ValueTask<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData);
 
-        protected abstract ValueTask<string> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData, string? whereCondition);
+        protected abstract ValueTask<string> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData, string? whereCondition, PrimaryKeyValue[]? primaryKeyValue);
 
         public void InitExport()
         {

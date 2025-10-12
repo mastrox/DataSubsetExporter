@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataSubset.DbDependencyGraph.Core.Configurations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common
 {
-    public record SelectionCondition((string column, object? value)[]? parentValue, string? whereCondition)
+    public record SelectionCondition((string column, object? value)[]? parentValue, string? whereCondition, PrimaryKeyValue[]? PrimaryKeyValue)
     {
     }
 }

@@ -1,4 +1,5 @@
-﻿using DataSubset.DbDependencyGraph.Core.DependencyGraph;
+﻿using DataSubset.DbDependencyGraph.Core.Configurations;
+using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporters.Common;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,12 @@ namespace DataSubset.Exporters.PostgreSql
     public class PostgreSqlExporterEngine(string connectionString) : DbExporterEngineBase
     {
         // Use Npgsql for PostgreSQL database connections and commands
-        protected override async Task<(string column, object? value)[]> ExecuteGetRowQuery(string queryWithValues)
+        protected override async IAsyncEnumerable<(string column, object? value)[]> ExecuteGetRowQuery(string queryWithValues)
         {
             using var connection = new Npgsql.NpgsqlConnection(connectionString);
             await connection.OpenAsync();
             using var command = new Npgsql.NpgsqlCommand(queryWithValues, connection);
             using var reader = await command.ExecuteReaderAsync();
-            var results = new List<(string column, object? value)[]>();
             while (await reader.ReadAsync())
             {
                 var row = new (string column, object? value)[reader.FieldCount];
@@ -27,11 +27,8 @@ namespace DataSubset.Exporters.PostgreSql
                 {
                     row[i] = (reader.GetName(i), reader.IsDBNull(i) ? null : reader.GetValue(i));
                 }
-                results.Add(row);
+                yield return row;
             }
-            if (results.Count > 1)
-                throw new Exception("More than one row returned for query: " + queryWithValues);
-            return results.FirstOrDefault() ?? Array.Empty<(string column, object? value)>();
         }
 
         protected override ValueTask<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData)
@@ -47,19 +44,23 @@ namespace DataSubset.Exporters.PostgreSql
             //build insert query
         }
 
-        protected override ValueTask<string> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData, string? whereCondition)
+        protected override ValueTask<string> GenerateSelectQuery(TableNode currentNode, ITableDependencyEdgeData? edgeData, string? whereCondition, PrimaryKeyValue[]? primaryKeyValue)
         {
             StringBuilder query = new StringBuilder();
             query.Append($"SELECT * FROM {currentNode.Schema}.\"{currentNode.Name}\" ");
-
+            bool hasWhereCondition = false;
             if (edgeData != null)
             {
-                
+
                 int count = 0;
                 foreach (var binding in edgeData.ColumnBindings)
                 {
-                    if(count == 0)
+
+                    if (count == 0)
+                    {
                         query.Append(" WHERE ");
+                        hasWhereCondition = true;
+                    }
                     else query.Append(" AND ");
 
                     query.Append($"{binding.TargetColumn} = {{{count}}}");
@@ -67,16 +68,40 @@ namespace DataSubset.Exporters.PostgreSql
                 }
             }
 
-            if(whereCondition!= null)
-                {
-                if (edgeData != null && edgeData.ColumnBindings.Any())
+            if (whereCondition != null)
+            {
+                if (hasWhereCondition)
                     query.Append(" AND ");
                 else
+                {
                     query.Append(" WHERE ");
+                    hasWhereCondition = true;
+                }
 
                 query.Append("(");
                 query.Append(whereCondition);
                 query.Append(")");
+            }
+
+            if (primaryKeyValue != null && primaryKeyValue.Length > 0)
+            {
+                if (hasWhereCondition)
+                    query.Append(" AND ");
+                else
+                {
+                    query.Append(" WHERE ");
+                    hasWhereCondition = true;
+                }
+                
+                bool first = true;
+                foreach (var pk in primaryKeyValue)
+                {
+                    if (!first)
+                        query.Append(" AND ");
+                    else first = false;
+                    query.Append($"{pk.ColumnName} = {pk.Value}");
+                }
+
             }
 
             return ValueTask.FromResult<string>(query.ToString());
@@ -240,6 +265,6 @@ namespace DataSubset.Exporters.PostgreSql
             return $"\"{identifier.Replace("\"", "\"\"")}\"";
         }
 
-       
+
     }
 }

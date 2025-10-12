@@ -47,15 +47,12 @@ namespace DataSubset.DbDependencyGraph.Core.DependencyGraph
             }
         }
 
-        public string GetTargetColumnFromBindings(string sourceColumn)
+        public string? GetTargetColumnFromBindings(string sourceColumn)
         {
-            var binding = ColumnBindings.FirstOrDefault(cb => cb.SourceColumn.Equals(sourceColumn, StringComparison.OrdinalIgnoreCase));
-            if (binding == null)
-            {
-                throw new KeyNotFoundException($"No binding found for source column '{sourceColumn}'.");
-            }
-            return binding.TargetColumn;
+            columnTargetBySource.TryGetValue(sourceColumn, out var targetColumn);
+            return targetColumn;
         }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImplicitRelTableDependencyEdgeData"/> class.

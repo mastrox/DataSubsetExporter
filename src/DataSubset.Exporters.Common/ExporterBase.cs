@@ -21,7 +21,7 @@ namespace DataSubset.Exporters.Common
                     continue;
                 }
                 var rootEdge = new GraphEdge<TableNode, ITableDependencyEdgeData>(source: null, target: currentTable, data: null);
-                SelectionCondition? whereValue = new SelectionCondition(null, rootTables.WhereClause);
+                SelectionCondition? whereValue = new SelectionCondition(null, rootTables.WhereClause, rootTables.PrimaryKeyValue);
                 
                 await foreach (var item in GetRelationItemsToExportInInsertOrder(rootEdge, whereValue, databaseGraph, tableExportConfig))
                 {
@@ -46,7 +46,7 @@ namespace DataSubset.Exporters.Common
                 foreach (var fkRelation in fkRelations)
                 {
 
-                    await foreach (var item in GetRelationItemsToExportInInsertOrder(fkRelation, selectionCondition, databaseGraph, tableExportConfig))
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(fkRelation, new SelectionCondition(row,null, null), databaseGraph, tableExportConfig))
                     {
                         yield return item;
                     }
@@ -59,7 +59,7 @@ namespace DataSubset.Exporters.Common
                 var implicitRelations = relations.Where(a => a.Data is ImplicitRelTableDependencyEdgeData);
                 foreach (var implicitRelation in implicitRelations)
                 {
-                    await foreach (var item in GetRelationItemsToExportInInsertOrder(implicitRelation, new SelectionCondition(row,  null), databaseGraph, tableExportConfig))
+                    await foreach (var item in GetRelationItemsToExportInInsertOrder(implicitRelation, new SelectionCondition(row,  null, null), databaseGraph, tableExportConfig))
                     {
                         yield return item;
                     }
