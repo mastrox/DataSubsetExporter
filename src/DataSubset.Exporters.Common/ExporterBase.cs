@@ -11,9 +11,15 @@ namespace DataSubset.Exporters.Common
     {
         HashSet<string> exportedRows = new HashSet<string>();
 
+        public IDbExporterEngine DbExporterEngine { get; } = dbExporterEngine;
+
         public async IAsyncEnumerable<T> GetItemsToExportInInsertOrder(IEnumerable<TableExportConfig> tableExportConfig, DatabaseGraph databaseGraph)
         {
-            dbExporterEngine.InitExport();
+            DbExporterEngine.InitExport();
+            await foreach (var item in GenerateMetadata(databaseGraph, tableExportConfig))
+            {
+                yield return item;
+            }
             foreach (var rootTables in tableExportConfig)
             {
                 //get node
@@ -33,12 +39,14 @@ namespace DataSubset.Exporters.Common
             }
         }
 
+        protected abstract IAsyncEnumerable<T> GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig);
+
         private async IAsyncEnumerable<T> GetRelationItemsToExportInInsertOrder(GraphEdge<TableNode, ITableDependencyEdgeData> parentToCurrentEdge, SelectionCondition selectionCondition, DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
         {
             var currentNode = parentToCurrentEdge.Target;
             
 
-            await foreach (var rowData in dbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, selectionCondition))
+            await foreach (var rowData in DbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, selectionCondition))
             {
                 StringBuilder rowKey = new StringBuilder();
                 rowKey.Append(currentNode.FullName);
@@ -46,7 +54,7 @@ namespace DataSubset.Exporters.Common
                 foreach (var data in rowData)
                 {
                     if (currentNode.PrimaryKeyColumnsSet.Contains(data.column))
-                        rowKey.Append(dbExporterEngine.ValueToString(data.value));
+                        rowKey.Append(DbExporterEngine.ValueToString(data.value));
                         rowKey.Append('^');
                 }
 

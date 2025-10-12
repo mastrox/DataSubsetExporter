@@ -13,7 +13,7 @@ Useful for creating reproducible test datasets, sharing focused slices of produc
 ## Features
 - Export by primary key and/or by WHERE clause.
 - Include/exclude tables and columns.
-- Output to file or stdout (TODO stdout).
+- Output to file or stdout (TODO ).
 - Handles cycles and avoids duplicate rows.
 - Simple CLI suitable for automation and CI pipelines TODO.
 
@@ -21,7 +21,6 @@ Useful for creating reproducible test datasets, sharing focused slices of produc
 
 Prerequisites
 - .NET 8 SDK or runtime
-- A supported ADO.NET provider (e.g., Microsoft SQL Server, PostgreSQL). Ensure the connection string uses a supported provider.
 
 ## Behavior and guarantees
 - Referential integrity: rows referenced by included rows will be included when possible to preserve FK relationships (subject to include/exclude rules).

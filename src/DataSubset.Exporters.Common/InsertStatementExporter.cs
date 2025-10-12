@@ -15,5 +15,10 @@ namespace DataSubset.Exporters.Common
         {
             return await dbExporterEngine.GenerateInsertStatement(currentNode, row, tableExportConfig);
         }
+
+        protected override IAsyncEnumerable<string> GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
+        {
+            yield break; //no metadata to generate
+        }
     }
 }

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <PackageId>DataSubset.DbDependencyGraph.PostgreSql</PackageId>
+	  <Description>PostgreSQL-specific dependency discovery utilities for DataSubset. Implements Npgsql-backed schema inspection and graph traversal to extract relationship-aware, minimal subsets of data for testing, migration, and export scenarios.</Description>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataSubset.DbDependencyGraph.Core\DataSubset.DbDependencyGraph.Core.csproj" />
+    <ProjectReference Include="..\DataSubset.DbDependencyGraph.PostgreSql\DataSubset.DbDependencyGraph.PostgreSql.csproj" />
+    <ProjectReference Include="..\DataSubset.Exporters.Common\DataSubset.Exporters.Common.csproj" />
+    <ProjectReference Include="..\DataSubset.Exporters.PostgreSql\DataSubset.Exporters.PostgreSql.csproj" />
+  </ItemGroup>
+
+</Project>

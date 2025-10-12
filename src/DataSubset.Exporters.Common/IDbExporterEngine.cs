@@ -9,5 +9,6 @@ namespace DataSubset.Exporters.Common
         Task<string> GenerateInsertStatement(TableNode currentNode, (string column, object? value)[] rowData, IEnumerable<TableExportConfig> tableExportConfig);
         IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? data, SelectionCondition selectionCondition);
         void InitExport();
+        DbTypes GetDbType();
     }
 }

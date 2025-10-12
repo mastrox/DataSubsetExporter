@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporters.Postgr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporters.PostgreSql.Test", "tests\DataSubset.Exporters.PostgreSql.Test\DataSubset.Exporters.PostgreSql.Test.csproj", "{62B4B663-C57C-4F92-B439-4FB0DE081554}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSubset.Exporter", "src\DataSubset.Exporter\DataSubset.Exporter.csproj", "{BBBD3980-05C4-422D-8CF4-CF19F82528F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62B4B663-C57C-4F92-B439-4FB0DE081554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBBD3980-05C4-422D-8CF4-CF19F82528F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBBD3980-05C4-422D-8CF4-CF19F82528F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBBD3980-05C4-422D-8CF4-CF19F82528F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBBD3980-05C4-422D-8CF4-CF19F82528F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +74,7 @@ Global
 		{D07E5FBC-5642-4373-8C1E-FA4A50B922BF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{E7327E7F-90BD-4FB3-89E9-E9374017664B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{62B4B663-C57C-4F92-B439-4FB0DE081554} = {08D7F488-DBE3-433C-9C4B-238433AD3CC5}
+		{BBBD3980-05C4-422D-8CF4-CF19F82528F9} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A18E5ECF-DD19-4774-958B-4D88DE8E9F2B}
