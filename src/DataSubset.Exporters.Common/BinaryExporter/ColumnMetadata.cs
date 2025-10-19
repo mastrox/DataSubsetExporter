@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common.BinaryExporter
 {
-    internal class ColumnMetadata
+    public struct ColumnMetadata
     {
+        [MessagePack.Key(0)]
+        public required string Name { get; set; }
+
+        [MessagePack.Key(1)]
+        public required string DataType { get; set; }
     }
 }

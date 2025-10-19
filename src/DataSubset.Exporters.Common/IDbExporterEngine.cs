@@ -1,5 +1,6 @@
 ﻿using DataSubset.DbDependencyGraph.Core.Configurations;
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
+using DataSubset.Exporters.Common.BinaryExporter;
 
 namespace DataSubset.Exporters.Common
 {
@@ -10,5 +11,6 @@ namespace DataSubset.Exporters.Common
         IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? data, SelectionCondition selectionCondition);
         void InitExport();
         DbTypes GetDbType();
+        Task<TableMetadata> GetTableMetadata(string schema, string tableName);
     }
 }

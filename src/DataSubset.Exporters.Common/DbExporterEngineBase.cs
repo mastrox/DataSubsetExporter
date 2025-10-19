@@ -1,5 +1,6 @@
 ﻿using DataSubset.DbDependencyGraph.Core.Configurations;
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
+using DataSubset.Exporters.Common.BinaryExporter;
 using System.Data;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -21,11 +22,11 @@ namespace DataSubset.Exporters.Common
             }
 
             //add row data to query
-            return AddValuesToQuery(query, rowData);
+            return await AddValuesToQuery(currentNode.Schema, currentNode.Name, query, rowData);
 
         }
 
-        protected abstract string AddValuesToQuery(string query, (string column, object? value)[]? values);
+        protected abstract ValueTask<string> AddValuesToQuery(string schema, string table, string query, (string column, object? value)[]? values);
 
 
         public async IAsyncEnumerable<(string column, object? value)[]> GetCurrentNodeRows(TableNode currentNode, ITableDependencyEdgeData? edgeData, SelectionCondition selectionCondition)
@@ -52,7 +53,7 @@ namespace DataSubset.Exporters.Common
             if (selectData.Count > 0)
             {
                 //add parent value to query
-                query = AddValuesToQuery(query, selectData.ToArray());
+                query = await AddValuesToQuery(currentNode.Schema, currentNode.Name, query, selectData.ToArray());
             }
 
             await foreach(var row in ExecuteGetRowQuery(query))
@@ -73,5 +74,7 @@ namespace DataSubset.Exporters.Common
         }
 
         public abstract string ValueToString(object? value);
+        public abstract DbTypes GetDbType();
+        public abstract Task<TableMetadata> GetTableMetadata(string schema, string tableName);
     }
 }

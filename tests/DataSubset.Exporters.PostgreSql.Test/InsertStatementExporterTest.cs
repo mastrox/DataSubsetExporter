@@ -522,7 +522,7 @@ namespace DataSubset.Exporters.PostgreSql.Test
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {exportSchema};";
             await command.ExecuteNonQueryAsync();
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {importSchema};";
-            
+            await command.ExecuteNonQueryAsync();
 
             // 2) Drop tables if they exist in the export schema (idempotent)
             command.CommandText = $"DROP TABLE IF EXISTS {importSchema}.typetest;";

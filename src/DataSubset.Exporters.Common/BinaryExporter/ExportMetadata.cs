@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common.BinaryExporter
 {
-    internal class ExportMetadata
+    public struct ExportMetadata
     {
         [MessagePack.Key(0)]
         public string Version { get; set; }
