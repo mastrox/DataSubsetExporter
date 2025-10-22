@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DataSubset.DbDependencyGraph.Core\DataSubset.DbDependencyGraph.Core.csproj" />
     <ProjectReference Include="..\DataSubset.DbDependencyGraph.PostgreSql\DataSubset.DbDependencyGraph.PostgreSql.csproj" />
     <ProjectReference Include="..\DataSubset.Exporters.Common\DataSubset.Exporters.Common.csproj" />

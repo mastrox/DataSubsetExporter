@@ -2,7 +2,9 @@
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporters.Common;
 using DataSubset.Exporters.Common.BinaryExporter;
+using NpgsqlTypes;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -153,19 +155,19 @@ namespace DataSubset.Exporters.PostgreSql
         {
             // Normalize the data type to lowercase for case-insensitive comparison
             var normalizedDataType = dataType.ToLowerInvariant();
-            
+
             // Check if this is an array type (ends with [])
-            if (normalizedDataType.Equals("array", StringComparison.OrdinalIgnoreCase) || 
-                normalizedDataType.StartsWith("_") || 
+            if (normalizedDataType.Equals("array", StringComparison.OrdinalIgnoreCase) ||
+                normalizedDataType.StartsWith("_") ||
                 value.GetType().IsArray)
             {
                 // Convert array to PostgreSQL array format
                 var array = (Array)value;
                 var elements = new List<string>();
-        
+
                 // Get the element type by removing array indicators
                 var elementType = normalizedDataType.TrimStart('_');
-        
+
                 for (int i = 0; i < array.Length; i++)
                 {
                     var element = array.GetValue(i);
@@ -207,7 +209,7 @@ namespace DataSubset.Exporters.PostgreSql
             // Numeric types
             if (dataType == "bigint" || dataType == "int8")
                 return Convert.ToInt64(value).ToString(CultureInfo.InvariantCulture);
-    
+
             if (dataType == "double precision" || dataType == "float8")
             {
                 value = Convert.ToDouble(value);
@@ -219,19 +221,19 @@ namespace DataSubset.Exporters.PostgreSql
                     return "'-Infinity'::double precision";
                 return ((double)value).ToString(CultureInfo.InvariantCulture);
             }
-    
+
             if (dataType == "integer" || dataType == "int" || dataType == "int4")
                 return Convert.ToInt32(value).ToString(CultureInfo.InvariantCulture);
-    
+
             if (dataType == "numeric" || dataType == "decimal")
                 return Convert.ToDecimal(value).ToString(CultureInfo.InvariantCulture);
-    
+
             if (dataType == "real" || dataType == "float4")
                 return Convert.ToSingle(value).ToString(CultureInfo.InvariantCulture);
-    
+
             if (dataType == "smallint" || dataType == "int2")
                 return Convert.ToInt16(value).ToString(CultureInfo.InvariantCulture);
-    
+
             if (dataType == "money")
                 return Convert.ToDecimal(value).ToString(CultureInfo.InvariantCulture);
 
@@ -242,7 +244,7 @@ namespace DataSubset.Exporters.PostgreSql
             // Character types
             if (dataType == "character" || dataType == "char")
                 return $"'{Convert.ToChar(value).ToString().Replace("'", "''")}'";
-    
+
             if (dataType == "text" || dataType == "character varying" || dataType == "varchar" || dataType == "citext")
                 return $"'{value.ToString()?.Replace("'", "''")}'";
 
@@ -256,19 +258,19 @@ namespace DataSubset.Exporters.PostgreSql
                 var dateOnly = Convert.ToDateTime(value);
                 return $"'{dateOnly:yyyy-MM-dd}'::date";
             }
-    
+
             if (dataType == "time" || dataType == "time without time zone")
             {
-                var timeOnly = Convert.ToDateTime(value);
-                return $"'{timeOnly:HH:mm:ss}'::time";
+                var timeOnly = (TimeSpan)value;
+                return $"'{timeOnly}'::time";
             }
-    
+
             if (dataType == "timestamp" || dataType == "timestamp without time zone")
             {
                 var dateTime = Convert.ToDateTime(value);
                 return $"'{dateTime:yyyy-MM-dd HH:mm:ss}'::timestamp";
             }
-    
+
             if (dataType == "timestamp with time zone" || dataType == "timestamptz")
             {
                 var dateTimeOffset = value as DateTimeOffset?;
@@ -276,10 +278,10 @@ namespace DataSubset.Exporters.PostgreSql
                     dateTimeOffset = new DateTimeOffset(Convert.ToDateTime(value));
                 return $"'{dateTimeOffset:yyyy-MM-dd HH:mm:ss zzz}'::timestamptz";
             }
-    
+
             if (dataType == "interval")
                 return $"'{value.ToString()}'::interval";
-    
+
             if (dataType == "time with time zone" || dataType == "timetz")
             {
                 var timeTz = value as DateTimeOffset?;
@@ -290,7 +292,23 @@ namespace DataSubset.Exporters.PostgreSql
 
             // Bit strings
             if (dataType == "bit" || dataType == "bit varying" || dataType == "varbit")
-                return $"'{value.ToString()}'";
+            {
+                switch (value)
+                {
+                    case bool boleanValue:
+                        return boleanValue ? "B'1'" : "B'0'";
+                    case BitArray bitArr:
+                        var sb = new StringBuilder("B'");
+
+                        for (int i = 0; i < bitArr.Count; i++)
+                        {
+                            char c = bitArr[i] ? '1' : '0';
+                            sb.Append(c);
+                        }
+                        sb.Append("'");
+                        return sb.ToString();
+                }
+            }
 
             // UUID
             if (dataType == "uuid")
@@ -303,16 +321,55 @@ namespace DataSubset.Exporters.PostgreSql
             // JSON types
             if (dataType == "json")
                 return $"'{value.ToString()?.Replace("'", "''")}'::json";
-    
+
             if (dataType == "jsonb")
                 return $"'{value.ToString()?.Replace("'", "''")}'::jsonb";
-    
+
             if (dataType == "jsonpath")
                 return $"'{value.ToString()?.Replace("'", "''")}'::jsonpath";
 
+
             // Range types
-            if (dataType == "tsrange" || dataType == "tstzrange" || dataType == "daterange")
+            if (dataType == "tsrange" || dataType == "tstzrange" || dataType == "daterange" ||
+                dataType == "int4range" || dataType == "int8range" || dataType == "numrange")
+            {
+                // Check if value is NpgsqlRange type
+                var valueT = value.GetType();
+                if (valueT.IsGenericType && valueT.GetGenericTypeDefinition().Name.Contains("NpgsqlRange"))
+                {
+                    // For daterange, format without time component
+                    if (dataType == "daterange")
+                    {
+                        var rangeVal = (NpgsqlRange<DateTime>)value ;
+                        
+                        // Get the LowerBound and UpperBound properties via reflection
+                        var lowerBoundProperty = rangeVal.LowerBound;
+                        var upperBoundProperty = rangeVal.UpperBound;
+                        var lowerBoundInfinite = rangeVal.LowerBoundInfinite;
+                        var upperBoundInfinite = rangeVal.UpperBoundInfinite;
+
+                        var lowerBound = lowerBoundInfinite ? "" : rangeVal.LowerBound.ToString("yyyy-MM-dd");
+                        var upperBound = upperBoundInfinite ? "" : rangeVal.UpperBound.ToString("yyyy-MM-dd");
+                        var lowerSymbol = rangeVal.LowerBoundIsInclusive ? "[" : "(";
+                        var upperSymbol = rangeVal.UpperBoundIsInclusive ? "]" : ")";
+                        return $"'{lowerSymbol}{lowerBound},{upperBound}{upperSymbol}'";
+                    }
+
+                    // Use ToString which formats as [lower,upper) or (lower,upper] etc.
+                    return $"'{value.ToString()}'";
+                }
+
+                // Check if value is NpgsqlRange type
+                var valueType = value.GetType();
+                if (valueType.IsGenericType && valueType.GetGenericTypeDefinition().Name.Contains("NpgsqlRange"))
+                {
+                    // Use ToString which formats as [lower,upper) or (lower,upper] etc.
+                    return $"'{value.ToString()}'";
+                }
+
+                // Fallback for string representation
                 return $"'{value.ToString()}'";
+            }
 
             // Default case - convert to string and escape
             return $"'{value.ToString()?.Replace("'", "''")}'";

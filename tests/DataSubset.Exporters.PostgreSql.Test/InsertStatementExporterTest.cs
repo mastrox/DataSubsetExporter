@@ -507,7 +507,67 @@ namespace DataSubset.Exporters.PostgreSql.Test
         }
 
         [Fact]
-        public async Task AllTypesTest()
+        public async Task BooleanTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createBooleanTable;
+            string insertDataQuery = PostgresqlScripts.insertBooleanTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task IntegerTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createIntegerTable;
+            string insertDataQuery = PostgresqlScripts.insertIntegerTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task BitTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createBitTable;
+            string insertDataQuery = PostgresqlScripts.insertBitTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task GeometricTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createGeometricTable;
+            string insertDataQuery = PostgresqlScripts.insertGeometricTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task CharacterTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createCharacterTable;
+            string insertDataQuery = PostgresqlScripts.insertCharacterTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task DateTimeTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createDateTimeTable;
+            string insertDataQuery = PostgresqlScripts.insertDateTimeTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+
+        private static async Task PerformTypesTest(int idToExport, string createTableQuery, string insertDataQuery, string tableName)
         {
             var connString = "Host=localhost;Username=postgres;Password=ciao;Database=postgres;Include Error Detail=True";
             await using var connection = new NpgsqlConnection(connString);
@@ -525,18 +585,18 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await command.ExecuteNonQueryAsync();
 
             // 2) Drop tables if they exist in the export schema (idempotent)
-            command.CommandText = $"DROP TABLE IF EXISTS {importSchema}.typetest;";
+            command.CommandText = $"DROP TABLE IF EXISTS {importSchema}.{tableName};";
             await command.ExecuteNonQueryAsync();
-            command.CommandText = $"DROP TABLE IF EXISTS {exportSchema}.typetest;";
+            command.CommandText = $"DROP TABLE IF EXISTS {exportSchema}.{tableName};";
             await command.ExecuteNonQueryAsync();
 
-            command.CommandText = string.Format(PostgresqlScripts.createTable,importSchema);
+            command.CommandText = string.Format(createTableQuery, importSchema, tableName);
             await command.ExecuteNonQueryAsync();
-            command.CommandText = string.Format(PostgresqlScripts.createTable, exportSchema);
+            command.CommandText = string.Format(createTableQuery, exportSchema, tableName);
             await command.ExecuteNonQueryAsync();
 
             // 5) Insert sample rows into export
-            command.CommandText = PostgresqlScripts.insertData;
+            command.CommandText = string.Format(insertDataQuery, exportSchema, tableName);
             await command.ExecuteNonQueryAsync();
 
             // 7) Build dependency graph for schema 'export'
@@ -548,17 +608,19 @@ namespace DataSubset.Exporters.PostgreSql.Test
             var postgreSqlExporterEngine = new PostgreSqlExporterEngine(connString);
             var exp = new InsertStatementExporter(postgreSqlExporterEngine);
 
+
+
             // 9) Configure the table export to use schema 'export' and table 'table2' with PK id=1
             var tableExportConfig = new TableExportConfig
             {
-                TableName = "typetest",
-                Schema = "export",
+                TableName = tableName,
+                Schema = exportSchema,
                 PrimaryKeyValue = new PrimaryKeyValue[]
                 {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = idToExport.ToString()
                             }
                 }
             };
@@ -582,9 +644,52 @@ namespace DataSubset.Exporters.PostgreSql.Test
                 await command.ExecuteNonQueryAsync();
             }
 
+            // Verify data was correctly inserted by comparing export and import tables
+            await CompareImportedValue(idToExport, tableName, exportSchema, importSchema, connection);
+
             Assert.True(true);
         }
 
+        private static async Task CompareImportedValue(int idToExport, string tableName,string exportSchema, string importSchema, NpgsqlConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT * FROM {exportSchema}.{tableName} WHERE id = {idToExport}";
+            await using var exportReader = await command.ExecuteReaderAsync();
+            var exportRows = new List<Dictionary<string, object?>>();
+            while (await exportReader.ReadAsync())
+            {
+                var row = new Dictionary<string, object?>();
+                for (int i = 0; i < exportReader.FieldCount; i++)
+                {
+                    row[exportReader.GetName(i)] = exportReader.IsDBNull(i) ? null : exportReader.GetValue(i);
+                }
+                exportRows.Add(row);
+            }
+            await exportReader.CloseAsync();
+
+            command.CommandText = $"SELECT * FROM {importSchema}.{tableName} WHERE id = {idToExport}";
+            await using var importReader = await command.ExecuteReaderAsync();
+            var importRows = new List<Dictionary<string, object?>>();
+            while (await importReader.ReadAsync())
+            {
+                var row = new Dictionary<string, object?>();
+                for (int i = 0; i < importReader.FieldCount; i++)
+                {
+                    row[importReader.GetName(i)] = importReader.IsDBNull(i) ? null : importReader.GetValue(i);
+                }
+                importRows.Add(row);
+            }
+            await importReader.CloseAsync();
+
+            Assert.Equal(exportRows.Count, importRows.Count);
+            for (int i = 0; i < exportRows.Count; i++)
+            {
+                foreach (var key in exportRows[i].Keys)
+                {
+                    Assert.Equal(exportRows[i][key], importRows[i][key]);
+                }
+            }
+        }
 
         private static async Task DropTable1(NpgsqlCommand command, string schema)
         {
