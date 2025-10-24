@@ -189,7 +189,7 @@ namespace DataSubset.Exporters.PostgreSql
                         {
                             elementValue = elementValue.Substring(1, elementValue.Length - 2);
                         }
-                        elements.Add($"\"{elementValue}\"");
+                        elements.Add($"{elementValue}");
                     }
                 }
                 return $"'{{{string.Join(",", elements)}}}'";
@@ -348,6 +348,17 @@ namespace DataSubset.Exporters.PostgreSql
                         
                         var lowerBound = rangeVal.LowerBoundInfinite ? "" : rangeVal.LowerBound.ToString("yyyy-MM-dd");
                         var upperBound = rangeVal.UpperBoundInfinite ? "" : rangeVal.UpperBound.ToString("yyyy-MM-dd");
+                        var lowerSymbol = rangeVal.LowerBoundIsInclusive ? "[" : "(";
+                        var upperSymbol = rangeVal.UpperBoundIsInclusive ? "]" : ")";
+                        return $"{quote}{lowerSymbol}{lowerBound},{upperBound}{upperSymbol}{quote}";
+                    }
+
+                    if (dataType == "numrange" || dataType == "nummultirange")
+                    {
+                        string quote = dataType == "numrange" ? "'" : "";
+                        var rangeVal = (NpgsqlRange<decimal>)value;
+                        var lowerBound = rangeVal.LowerBoundInfinite ? "" : rangeVal.LowerBound.ToString(CultureInfo.InvariantCulture);
+                        var upperBound = rangeVal.UpperBoundInfinite ? "" : rangeVal.UpperBound.ToString(CultureInfo.InvariantCulture);
                         var lowerSymbol = rangeVal.LowerBoundIsInclusive ? "[" : "(";
                         var upperSymbol = rangeVal.UpperBoundIsInclusive ? "]" : ")";
                         return $"{quote}{lowerSymbol}{lowerBound},{upperBound}{upperSymbol}{quote}";

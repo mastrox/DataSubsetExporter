@@ -589,6 +589,16 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
         }
 
+        [Fact]
+        public async Task StringArrayTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createStringArrayTable;
+            string insertDataQuery = PostgresqlScripts.insertStringArrayTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
 
         [Fact]
         public async Task DateTimeRangeTypesTest()
@@ -596,6 +606,16 @@ namespace DataSubset.Exporters.PostgreSql.Test
             int idToExport = 1;
             string createTableQuery = PostgresqlScripts.createDateTimeRangeTable;
             string insertDataQuery = PostgresqlScripts.insertDateTimeRangeTable;
+            string tableName = "typetest";
+            await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
+        }
+
+        [Fact]
+        public async Task NumericRangeTypesTest()
+        {
+            int idToExport = 1;
+            string createTableQuery = PostgresqlScripts.createNumericRangeTable;
+            string insertDataQuery = PostgresqlScripts.insertNumericRangeTable;
             string tableName = "typetest";
             await PerformTypesTest(idToExport, createTableQuery, insertDataQuery, tableName);
         }
