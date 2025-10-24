@@ -331,39 +331,38 @@ namespace DataSubset.Exporters.PostgreSql
 
             // Range types
             if (dataType == "tsrange" || dataType == "tstzrange" || dataType == "daterange" ||
-                dataType == "int4range" || dataType == "int8range" || dataType == "numrange")
+                dataType == "int4range" || dataType == "int8range" || dataType == "numrange" ||
+                dataType == "tsmultirange" || dataType == "tstzmultirange" || dataType == "datemultirange" ||
+                dataType == "int4multirange" || dataType == "int8multirange" || dataType == "nummultirange")
             {
                 // Check if value is NpgsqlRange type
                 var valueT = value.GetType();
-                if (valueT.IsGenericType && valueT.GetGenericTypeDefinition().Name.Contains("NpgsqlRange"))
+                if (valueT.IsGenericType && (valueT.GetGenericTypeDefinition().Name.Contains("NpgsqlRange") || 
+                                              valueT.GetGenericTypeDefinition().Name.Contains("NpgsqlMultiRange")))
                 {
                     // For daterange, format without time component
-                    if (dataType == "daterange")
+                    if (dataType == "daterange" || dataType == "datemultirange")
                     {
-                        var rangeVal = (NpgsqlRange<DateTime>)value ;
+                        string quote= dataType == "daterange" ? "'" : "";
+                        var rangeVal = (NpgsqlRange<DateTime>)value;
                         
-                        // Get the LowerBound and UpperBound properties via reflection
-                        var lowerBoundProperty = rangeVal.LowerBound;
-                        var upperBoundProperty = rangeVal.UpperBound;
-                        var lowerBoundInfinite = rangeVal.LowerBoundInfinite;
-                        var upperBoundInfinite = rangeVal.UpperBoundInfinite;
-
-                        var lowerBound = lowerBoundInfinite ? "" : rangeVal.LowerBound.ToString("yyyy-MM-dd");
-                        var upperBound = upperBoundInfinite ? "" : rangeVal.UpperBound.ToString("yyyy-MM-dd");
+                        var lowerBound = rangeVal.LowerBoundInfinite ? "" : rangeVal.LowerBound.ToString("yyyy-MM-dd");
+                        var upperBound = rangeVal.UpperBoundInfinite ? "" : rangeVal.UpperBound.ToString("yyyy-MM-dd");
                         var lowerSymbol = rangeVal.LowerBoundIsInclusive ? "[" : "(";
                         var upperSymbol = rangeVal.UpperBoundIsInclusive ? "]" : ")";
-                        return $"'{lowerSymbol}{lowerBound},{upperBound}{upperSymbol}'";
+                        return $"{quote}{lowerSymbol}{lowerBound},{upperBound}{upperSymbol}{quote}";
                     }
 
                     // Use ToString which formats as [lower,upper) or (lower,upper] etc.
                     return $"'{value.ToString()}'";
                 }
 
-                // Check if value is NpgsqlRange type
+                // Check if value is NpgsqlRange type (duplicate check removed, kept for safety)
                 var valueType = value.GetType();
-                if (valueType.IsGenericType && valueType.GetGenericTypeDefinition().Name.Contains("NpgsqlRange"))
+                if (valueType.IsGenericType && (valueType.GetGenericTypeDefinition().Name.Contains("NpgsqlRange") || 
+                                                 valueType.GetGenericTypeDefinition().Name.Contains("NpgsqlMultiRange")))
                 {
-                    // Use ToString which formats as [lower,upper) or (lower,upper] etc.
+                    // Use ToString which formats appropriately for range and multirange types
                     return $"'{value.ToString()}'";
                 }
 
@@ -560,9 +559,7 @@ namespace DataSubset.Exporters.PostgreSql
                 var udtName = reader.GetString(2);
 
                 // Use udt_name for more specific type information (e.g., for user-defined types)
-                var finalDataType = string.Equals(dataType, "USER-DEFINED", StringComparison.OrdinalIgnoreCase)
-                    ? udtName
-                    : dataType;
+                var finalDataType = udtName;
 
                 columns.Add(new ColumnMetadata
                 {
