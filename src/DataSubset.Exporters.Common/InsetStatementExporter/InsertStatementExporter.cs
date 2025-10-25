@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataSubset.Exporters.Common
+namespace DataSubset.Exporters.Common.InsetStatementExporter
 {
     public class InsertStatementExporter(IDbExporterEngine dbExporterEngine, ILogger? logger = null) : ExporterBase<string>(dbExporterEngine, logger)
     {
