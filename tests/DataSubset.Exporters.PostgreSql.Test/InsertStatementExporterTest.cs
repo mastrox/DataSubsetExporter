@@ -1,5 +1,7 @@
 using DataSubset.DbDependencyGraph.Core.Configurations;
+using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporters.Common;
+using DataSubset.Exporters.Common.InsetStatementExporter;
 using DataSubset.PostgreSql;
 using DependencyTreeApp;
 using Npgsql;
@@ -12,6 +14,9 @@ namespace DataSubset.Exporters.PostgreSql.Test
         [Fact]
         public async Task Single_RootTable_Test()
         {
+            string tableName = "table2";
+            int idToExport = 1;
+
             var connString = "Host=localhost;Username=postgres;Password=ciao;Database=postgres;Include Error Detail=True";
 
             await using var connection = new NpgsqlConnection(connString);
@@ -22,6 +27,10 @@ namespace DataSubset.Exporters.PostgreSql.Test
 
             string exportSchema = "export";
             string importSchema = "import";
+
+            await DropSchema(command, exportSchema);
+            await DropSchema(command, importSchema);
+
             // 1) Ensure schemas exist
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {exportSchema};";
             await command.ExecuteNonQueryAsync();
@@ -29,13 +38,9 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await command.ExecuteNonQueryAsync();
 
             // 2) Drop and create tables for hierarchy 1 in both schemas
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
             await CreateTable1(command, exportSchema);
             await CreateTable2(command, exportSchema);
 
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
             await CreateTable1(command, importSchema);
             await CreateTable2(command, importSchema);
 
@@ -63,14 +68,14 @@ namespace DataSubset.Exporters.PostgreSql.Test
             // 9) Configure the table export to use schema 'export' and table 'table2' with PK id=1
             var tableExportConfig = new TableExportConfig
             {
-                TableName = "table2",
+                TableName = tableName,
                 Schema = "export",
                 PrimaryKeyValue = new PrimaryKeyValue[]
                 {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = idToExport.ToString()
                             }
                 }
             };
@@ -96,17 +101,20 @@ namespace DataSubset.Exporters.PostgreSql.Test
                 command.CommandText = r.Replace(exportSchema, importSchema);
                 await command.ExecuteNonQueryAsync();
             }
+            
+            // Verify data was correctly inserted by comparing export and import tables
+            await CompareImportedValue(idToExport, tableName, exportSchema, importSchema, connection);
 
-
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
         }
 
         [Fact]
         public async Task Multiple_RootTable_Separate_Hierarchy_Test()
         {
+            string firstTableName = "table2";
+            int firtsIdToExport = 1;
+            string secondTableName = "table4";
+            int secondIdToExport = 2;
+
             var connString = "Host=localhost;Username=postgres;Password=ciao;Database=postgres;Include Error Detail=True";
 
             await using var connection = new NpgsqlConnection(connString);
@@ -117,6 +125,10 @@ namespace DataSubset.Exporters.PostgreSql.Test
 
             string exportSchema = "export";
             string importSchema = "import";
+        
+            await DropSchema(command, exportSchema);
+            await DropSchema(command, importSchema);
+
             // 1) Ensure schemas exist
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {exportSchema};";
             await command.ExecuteNonQueryAsync();
@@ -124,24 +136,16 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await command.ExecuteNonQueryAsync();
 
             // H1 tables (table1, table2) in both schemas
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
             await CreateTable1(command, exportSchema);
             await CreateTable2(command, exportSchema);
 
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
             await CreateTable1(command, importSchema);
             await CreateTable2(command, importSchema);
 
             // H2 tables (table3, table4) in both schemas
-            await DropTable4(command, exportSchema);
-            await DropTable3(command, exportSchema);
             await CreateTable3(command, exportSchema);
             await CreateTable4(command, exportSchema);
 
-            await DropTable4(command, importSchema);
-            await DropTable3(command, importSchema);
             await CreateTable3(command, importSchema);
             await CreateTable4(command, importSchema);
 
@@ -181,27 +185,27 @@ namespace DataSubset.Exporters.PostgreSql.Test
             // 9) Configure the table export to use schema 'export' and table 'table2' with PK id=1
             TableExportConfig[] tableExportConfig = [ new TableExportConfig
                 {
-                    TableName = "table2",
+                    TableName = firstTableName,
                     Schema = "export",
                     PrimaryKeyValue = new PrimaryKeyValue[]
                     {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = firtsIdToExport.ToString()
                             }
                     }
                 },
                 new TableExportConfig
                 {
-                    TableName = "table4",
+                    TableName = secondTableName,
                     Schema = "export",
                     PrimaryKeyValue = new PrimaryKeyValue[]
                     {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "2"
+                                Value = secondIdToExport.ToString()
                             }
                     }
                 }];
@@ -232,20 +236,27 @@ namespace DataSubset.Exporters.PostgreSql.Test
                 await command.ExecuteNonQueryAsync();
             }
 
-            await DropTable4(command, exportSchema);
-            await DropTable3(command, exportSchema);
-            await DropTable4(command, importSchema);
-            await DropTable3(command, importSchema);
+            // Verify data was correctly inserted by comparing export and import tables
+            await CompareImportedValue(firtsIdToExport, firstTableName, exportSchema, importSchema, connection);
+            await CompareImportedValue(secondIdToExport, secondTableName, exportSchema, importSchema, connection);
 
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
+
+        }
+
+        private async Task DropSchema(NpgsqlCommand command, string exportSchema)
+        {
+            command.CommandText = $"DROP SCHEMA IF EXISTS {exportSchema} CASCADE;";
+            await command.ExecuteNonQueryAsync();
         }
 
         [Fact]
         public async Task Multiple_RootTable_Overlapping_Hierarchy_Different_Data_Test()
         {
+            string firstTableName = "table2";
+            int firtsIdToExport = 1;
+            string secondTableName = "table5";
+            int secondIdToExport = 2;
+
             var connString = "Host=localhost;Username=postgres;Password=ciao;Database=postgres;Include Error Detail=True";
 
             await using var connection = new NpgsqlConnection(connString);
@@ -256,21 +267,15 @@ namespace DataSubset.Exporters.PostgreSql.Test
 
             string exportSchema = "export";
             string importSchema = "import";
+
+            await DropSchema(command, exportSchema);
+            await DropSchema(command, importSchema);
+
             // 1) Ensure schemas exist
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {exportSchema};";
             await command.ExecuteNonQueryAsync();
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {importSchema};";
             await command.ExecuteNonQueryAsync();
-
-            // 2) Drop tables if they exist in the export schema (idempotent)
-            await DropTable5(command, importSchema);
-            await DropTable5(command, exportSchema);
-
-            // H1 and H3 (table1 + table5) in both schemas
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
 
             await CreateTable1(command, exportSchema);
             await CreateTable2(command, exportSchema);
@@ -314,27 +319,27 @@ namespace DataSubset.Exporters.PostgreSql.Test
             {
                     new TableExportConfig
                     {
-                        TableName = "table2",
+                        TableName = firstTableName,
                         Schema = "export",
                         PrimaryKeyValue = new PrimaryKeyValue[]
                         {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = firtsIdToExport.ToString()
                             }
                         }
                     },
                     new TableExportConfig
                     {
-                        TableName = "table5",
+                        TableName = secondTableName,
                         Schema = "export",
                         PrimaryKeyValue = new PrimaryKeyValue[]
                         {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "2"
+                                Value = secondIdToExport.ToString()
                             }
                         }
                     }
@@ -365,19 +370,21 @@ namespace DataSubset.Exporters.PostgreSql.Test
                 command.CommandText = r.Replace(exportSchema, importSchema);
                 await command.ExecuteNonQueryAsync();
             }
-            await DropTable5(command, importSchema);
-            await DropTable5(command, exportSchema);
 
-            // H1 and H3 (table1 + table5) in both schemas
-            await DropTable2(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable1(command, importSchema);
+            // Verify data was correctly inserted by comparing export and import tables
+            await CompareImportedValue(firtsIdToExport, firstTableName, exportSchema, importSchema, connection);
+            await CompareImportedValue(secondIdToExport, secondTableName, exportSchema, importSchema, connection);
+
         }
 
         [Fact]
         public async Task Multiple_RootTable_Overlapping_Hierarchy_Overlapping_Data_Test()
         {
+            string firstTableName = "table2";
+            int firtsIdToExport = 1;
+            string secondTableName = "table5";
+            int secondIdToExport = 1;
+
             var connString = "Host=localhost;Username=postgres;Password=ciao;Database=postgres;Include Error Detail=True";
 
             await using var connection = new NpgsqlConnection(connString);
@@ -388,25 +395,16 @@ namespace DataSubset.Exporters.PostgreSql.Test
 
             string exportSchema = "export";
             string importSchema = "import";
+
+            await DropSchema(command, exportSchema);
+            await DropSchema(command, importSchema);
+
             // 1) Ensure schemas exist
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {exportSchema};";
             await command.ExecuteNonQueryAsync();
             command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {importSchema};";
             await command.ExecuteNonQueryAsync();
-
-            // 2) Drop tables if they exist in the export schema (idempotent)
-            await DropTable5(command, importSchema);
-            await DropTable5(command, exportSchema);
-
-            // Ensure H1 and H3 are created
-            await DropTable2(command, exportSchema);
-            await DropTable5(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable5(command, importSchema);
-            await DropTable1(command, importSchema);
-
-            
+                                  
             await CreateTable1(command, exportSchema);
             await CreateTable2(command, exportSchema);
             await CreateTable5(command, exportSchema);
@@ -448,27 +446,27 @@ namespace DataSubset.Exporters.PostgreSql.Test
             {
                     new TableExportConfig
                     {
-                        TableName = "table2",
+                        TableName = firstTableName,
                         Schema = "export",
                         PrimaryKeyValue = new PrimaryKeyValue[]
                         {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = firtsIdToExport.ToString()
                             }
                         }
                     },
                     new TableExportConfig
                     {
-                        TableName = "table5",
+                        TableName = secondTableName,
                         Schema = "export",
                         PrimaryKeyValue = new PrimaryKeyValue[]
                         {
                             new PrimaryKeyValue
                             {
                                 ColumnName = "id",
-                                Value = "1"
+                                Value = secondIdToExport.ToString()
                             }
                         }
                     }
@@ -498,12 +496,9 @@ namespace DataSubset.Exporters.PostgreSql.Test
                 await command.ExecuteNonQueryAsync();
             }
 
-            await DropTable2(command, exportSchema);
-            await DropTable5(command, exportSchema);
-            await DropTable1(command, exportSchema);
-            await DropTable2(command, importSchema);
-            await DropTable5(command, importSchema);
-            await DropTable1(command, importSchema);
+            // Verify data was correctly inserted by comparing export and import tables
+            await CompareImportedValue(firtsIdToExport, firstTableName, exportSchema, importSchema, connection);
+            await CompareImportedValue(secondIdToExport, secondTableName, exportSchema, importSchema, connection);
         }
 
         [Fact]
@@ -745,11 +740,6 @@ namespace DataSubset.Exporters.PostgreSql.Test
             }
         }
 
-        private static async Task DropTable1(NpgsqlCommand command, string schema)
-        {
-            command.CommandText = $"DROP TABLE IF EXISTS {schema}.table1;";
-            await command.ExecuteNonQueryAsync();
-        }
 
         private static async Task CreateTable1(NpgsqlCommand command, string schema)
         {
@@ -757,11 +747,6 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await command.ExecuteNonQueryAsync();
         }
 
-        private static async Task DropTable2(NpgsqlCommand command, string schema)
-        {
-            command.CommandText = $"DROP TABLE IF EXISTS {schema}.table2;";
-            await command.ExecuteNonQueryAsync();
-        }
 
         private static async Task CreateTable2(NpgsqlCommand command, string schema)
         {
@@ -775,21 +760,9 @@ namespace DataSubset.Exporters.PostgreSql.Test
             await command.ExecuteNonQueryAsync();
         }
 
-        private static async Task DropTable3(NpgsqlCommand command, string schema)
-        {
-            command.CommandText = $"DROP TABLE IF EXISTS {schema}.table3;";
-            await command.ExecuteNonQueryAsync();
-        }
-
         private static async Task CreateTable3(NpgsqlCommand command, string schema)
         {
             command.CommandText = $"CREATE TABLE IF NOT EXISTS {schema}.table3 (id INT PRIMARY KEY, name TEXT);";
-            await command.ExecuteNonQueryAsync();
-        }
-
-        private static async Task DropTable4(NpgsqlCommand command, string schema)
-        {
-            command.CommandText = $"DROP TABLE IF EXISTS {schema}.table4;";
             await command.ExecuteNonQueryAsync();
         }
 
@@ -802,12 +775,6 @@ namespace DataSubset.Exporters.PostgreSql.Test
                             data TEXT,
                             CONSTRAINT fk_tabl4_table3 FOREIGN KEY (table1_id) REFERENCES {schema}.table3(id)
                         );";
-            await command.ExecuteNonQueryAsync();
-        }
-
-        private static async Task DropTable5(NpgsqlCommand command, string schema)
-        {
-            command.CommandText = $"DROP TABLE IF EXISTS {schema}.table5;";
             await command.ExecuteNonQueryAsync();
         }
 
