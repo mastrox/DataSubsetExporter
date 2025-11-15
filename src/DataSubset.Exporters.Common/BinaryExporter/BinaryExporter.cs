@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common.BinaryExporter
 {
-    internal class BinaryExporter: ExporterBase<byte[]>
+    public class BinaryExporter: ExporterBase<byte[]>
     {
-        private Dictionary<(string schema, string table), int> tableKeyMapping = new Dictionary<(string schema, string table), int>();
+        TableMetadataVisitor? tableMetadataVisitor = null;
         public BinaryExporter(IDbExporterEngine dbExporterEngine, ILogger? logger = null) : base(dbExporterEngine, logger)
         {
         }
@@ -21,28 +21,20 @@ namespace DataSubset.Exporters.Common.BinaryExporter
             return MessagePack.MessagePackSerializer.Serialize(
                 new RowData() 
                 { 
-                    TableKey = tableKeyMapping[(currentNode.Schema,currentNode.Name)] , 
+                    TableKey = tableMetadataVisitor!.TablesMetadata[(currentNode.Schema,currentNode.Name)].TableKey, 
                     ColumnValues = row.Select(r=> r.value).ToArray() 
                 });
         }
 
-        protected override async IAsyncEnumerable<byte[]> GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
+        protected override byte[]? GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
         {
+            var exportMetadata = new ExportMetadata("1", DbExporterEngine.GetDbType(), DateTimeOffset.Now);
 
-            yield return MessagePack.MessagePackSerializer.Serialize(new ExportMetadata("1", DbExporterEngine.GetDbType(), DateTimeOffset.Now));
+            tableMetadataVisitor = new TableMetadataVisitor(databaseGraph, DbExporterEngine);
+            tableMetadataVisitor.VisitTablePreOrder(tableExportConfig.Select(t => (t.Schema, t.TableName)));
 
-            foreach (var rootTables in tableExportConfig)
-            {
-                yield return await GetTableMetadata(rootTables);
-            }
-
-        }
-
-        private async Task<byte[]> GetTableMetadata(TableExportConfig rootTables)
-        {
-            var tm = await DbExporterEngine.GetTableMetadata(rootTables.Schema, rootTables.TableName);
-            tableKeyMapping.Add((rootTables.Schema, rootTables.TableName), tm.TableKey);
-            return MessagePack.MessagePackSerializer.Serialize(tm);
+            exportMetadata.TablesMetadata = tableMetadataVisitor.TablesMetadata.Values.ToArray();
+            return MessagePack.MessagePackSerializer.Serialize(exportMetadata);
         }
 
     }

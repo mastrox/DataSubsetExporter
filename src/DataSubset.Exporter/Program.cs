@@ -2,6 +2,7 @@
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporter;
 using DataSubset.Exporters.Common;
+using DataSubset.Exporters.Common.InsetStatementExporter;
 using DataSubset.Exporters.PostgreSql;
 using DataSubset.PostgreSql;
 using DependencyTreeApp;

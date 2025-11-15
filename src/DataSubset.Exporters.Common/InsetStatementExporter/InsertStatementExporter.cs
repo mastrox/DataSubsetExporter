@@ -16,9 +16,9 @@ namespace DataSubset.Exporters.Common.InsetStatementExporter
             return await dbExporterEngine.GenerateInsertStatement(currentNode, row, tableExportConfig);
         }
 
-        protected async override IAsyncEnumerable<string> GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
+        protected override string? GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
         {
-            yield break; //no metadata to generate
+            return null; //no metadata to generate
         }
     }
 }

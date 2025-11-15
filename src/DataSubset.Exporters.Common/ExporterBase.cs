@@ -16,10 +16,11 @@ namespace DataSubset.Exporters.Common
         public async IAsyncEnumerable<T> GetItemsToExportInInsertOrder(IEnumerable<TableExportConfig> tableExportConfig, DatabaseGraph databaseGraph)
         {
             DbExporterEngine.InitExport();
-            await foreach (var item in GenerateMetadata(databaseGraph, tableExportConfig))
-            {
-                yield return item;
-            }
+            var metadata = GenerateMetadata(databaseGraph, tableExportConfig);
+            
+            if (metadata != null)
+                yield return metadata;
+          
             foreach (var rootTables in tableExportConfig)
             {
                 //get node
@@ -39,12 +40,11 @@ namespace DataSubset.Exporters.Common
             }
         }
 
-        protected abstract IAsyncEnumerable<T> GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig);
+        protected abstract T? GenerateMetadata(DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig);
 
         private async IAsyncEnumerable<T> GetRelationItemsToExportInInsertOrder(GraphEdge<TableNode, ITableDependencyEdgeData> parentToCurrentEdge, SelectionCondition selectionCondition, DatabaseGraph databaseGraph, IEnumerable<TableExportConfig> tableExportConfig)
         {
             var currentNode = parentToCurrentEdge.Target;
-            
 
             await foreach (var rowData in DbExporterEngine.GetCurrentNodeRows(currentNode, parentToCurrentEdge.Data, selectionCondition))
             {
@@ -98,9 +98,7 @@ namespace DataSubset.Exporters.Common
             }
 
         }
-
         protected abstract Task<T> GenerateCurrentRowExportItem(TableNode currentNode, (string column, object? value)[] row, IEnumerable<TableExportConfig> tableExportConfig);
-
 
     }
 }

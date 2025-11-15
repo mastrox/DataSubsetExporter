@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common.BinaryExporter
 {
-    internal struct RowData
+    [MessagePack.MessagePackObject]
+    public struct RowData
     {
+        [MessagePack.Key(0)]
         public int TableKey { get; set; }
+        [MessagePack.Key(1)]
         public object?[] ColumnValues { get; set; }
     }
 }

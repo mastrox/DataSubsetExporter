@@ -43,7 +43,7 @@ namespace DataSubset.DbDependencyGraph.Core.DependencyGraph
         /// the current node is neither processed nor descended into.
         /// After child traversal completes, <see cref="ProcessCurrentNode(TableNode, ITableDependencyEdgeData?, int, TNodeContext?)"/> is invoked.
         /// </remarks>
-        public void VisitTablePostOrder((string schema, string tableName)[] rootTables)
+        public void VisitTablePostOrder(IEnumerable<(string schema, string tableName)> rootTables)
         {
             foreach (var table in rootTables)
             {
@@ -71,7 +71,7 @@ namespace DataSubset.DbDependencyGraph.Core.DependencyGraph
         /// the current node is neither processed nor descended into.
         /// <see cref="ProcessCurrentNode(TableNode, ITableDependencyEdgeData?, int, TNodeContext?)"/> is invoked first; then the traversal descends into children.
         /// </remarks>
-        public void VisitTablePreOrder((string schema, string tableName)[] rootTables)
+        public void VisitTablePreOrder(IEnumerable<(string schema, string tableName)> rootTables)
         {
             foreach (var table in rootTables)
             {

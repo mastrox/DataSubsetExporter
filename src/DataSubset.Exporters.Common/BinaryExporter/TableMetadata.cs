@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace DataSubset.Exporters.Common.BinaryExporter
 {
+    [MessagePack.MessagePackObject]
     public struct TableMetadata()
     {
         [MessagePack.Key(0)]
