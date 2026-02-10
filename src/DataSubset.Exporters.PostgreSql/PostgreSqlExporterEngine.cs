@@ -1,7 +1,6 @@
 ﻿using DataSubset.DbDependencyGraph.Core.Configurations;
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporters.Common;
-using DataSubset.Exporters.Common.BinaryExporter;
 using NpgsqlTypes;
 using System;
 using System.Collections;
@@ -538,7 +537,7 @@ namespace DataSubset.Exporters.PostgreSql
             return DbTypes.Postgres;
         }
 
-        public override async Task<TableMetadata> GetTableMetadata(string schema, string tableName)
+        public async Task<TableMetadata> GetTableMetadata(string schema, string tableName)
         {
             var columns = new List<ColumnMetadata>();
 

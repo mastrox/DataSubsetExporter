@@ -1,8 +1,5 @@
 ﻿using DataSubset.DbDependencyGraph.Core.Configurations;
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
-using DataSubset.Exporters.Common.BinaryExporter;
-using System.Data;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DataSubset.Exporters.Common
 {
@@ -75,6 +72,6 @@ namespace DataSubset.Exporters.Common
 
         public abstract string ValueToString(object? value);
         public abstract DbTypes GetDbType();
-        public abstract Task<TableMetadata> GetTableMetadata(string schema, string tableName);
+
     }
 }

@@ -2,6 +2,7 @@
 using DataSubset.DbDependencyGraph.Core.DependencyGraph;
 using DataSubset.Exporter;
 using DataSubset.Exporters.Common;
+using DataSubset.Exporters.Common.InsetStatementExporter;
 using DataSubset.Exporters.PostgreSql;
 using DataSubset.PostgreSql;
 using DependencyTreeApp;
@@ -15,27 +16,12 @@ if (args.Length == 0 || args.Contains("-h") || args.Contains("--help"))
 // Parse command-line arguments
 var configFile = GetArgument(args, "-c", "--config-file");
 var outputFile = GetArgument(args, "-o", "--output-file");
-var formatStr = GetArgument(args, "-f", "--format");
 var dbTypeStr = GetArgument(args, "-d", "--db-type");
 
 // Validate required arguments
 if (string.IsNullOrEmpty(configFile))
 {
     Console.WriteLine("Error: Config file is required.");
-    PrintUsage();
-    return 1;
-}
-
-if (string.IsNullOrEmpty(formatStr))
-{
-    Console.WriteLine("Error: Format is required.");
-    PrintUsage();
-    return 1;
-}
-
-if (formatStr != "insert" && formatStr != "binary")
-{
-    Console.WriteLine($"Error: Invalid format '{formatStr}'. Must be 'insert' or 'binary'.");
     PrintUsage();
     return 1;
 }
@@ -65,21 +51,7 @@ switch (dbTypeStr.Trim())
         return 1;
 }
 
-InsertStatementExporter? insertStatementExporter = null;
-switch (formatStr.Trim())
-{
-    case "insert":
-        insertStatementExporter = new InsertStatementExporter(dbExporterEngineBase);
-        break;
-    case "binary":
-        Console.WriteLine($"Error: {formatStr} not implemented yet");
-        return 1;
-        break;
-    default:
-        Console.WriteLine($"Error: Invalid format '{formatStr}'. Must be 'insert' or 'binary'.");
-        PrintUsage();
-        return 1;
-}
+InsertStatementExporter? insertStatementExporter = new InsertStatementExporter(dbExporterEngineBase);
 var tableDependencyGraphBuilder = new TableDependencyGraphBuilder(databaseDependencyDiscoverer);
 var graph = await tableDependencyGraphBuilder.BuildDependencyGraphAsync(new[] { "export" });
 
@@ -131,7 +103,6 @@ static void PrintUsage()
     Console.WriteLine("Options:");
     Console.WriteLine("  -c, --config-file <filepath>   Required. Path to the configuration file.");
     Console.WriteLine("  -o, --output-file <filepath>   Optional. Path to the output file.");
-    Console.WriteLine("  -f, --format <format>          Required. Export format: 'insert' or 'binary'.");
     Console.WriteLine("  -d, --db-type <type>           Required. Database type: 'postgres', 'sqlserver', or 'mysql'.");
     Console.WriteLine("  -h, --help                     Display this help message.");
     Console.WriteLine();
